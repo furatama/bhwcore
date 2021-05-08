@@ -3,7 +3,7 @@
     "description": "Rest Core Bhw",
     "require": {	
 	"php": ">=5.3.7",
-        "symfony/var-dumper": "^3.1",
+        "symfony/var-dumper": "^5.0",
         "vlucas/phpdotenv": "^5.3",
         "firebase/php-jwt": "^5.2",
         "guzzlehttp/guzzle": "^7.2"
