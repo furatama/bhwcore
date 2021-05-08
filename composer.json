@@ -1,7 +1,6 @@
 {
     "name": "bhw/core",
     "description": "Rest Core Bhw",
-    "type": "project",
     "require": {
 		"php": ">=7.2",
         "symfony/var-dumper": "^3.1",
