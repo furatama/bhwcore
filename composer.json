@@ -12,7 +12,6 @@
         "mikey179/vfsstream": "1.1.*",
         "phpunit/phpunit": "4.* || 5.*"
     },
-    "minimum-stability": "dev",
     "autoload": {
         "psr-4": {"bhw\\BhawanaCore\\": "src/"},
         "files": [
