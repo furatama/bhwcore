@@ -1,0 +1,32 @@
+{
+    "name": "bhw/core",
+    "description": "Rest Core Bhw",
+    "type": "project",
+    "require": {
+		"php": ">=7.2",
+        "symfony/var-dumper": "^3.1",
+        "vlucas/phpdotenv": "^5.3",
+        "firebase/php-jwt": "^5.2",
+        "guzzlehttp/guzzle": "^7.2"
+    },
+    "require-dev": {
+        "mikey179/vfsstream": "1.1.*",
+        "phpunit/phpunit": "4.* || 5.*"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {"bhw\\BhawanaCore\\": "src/"},
+        "files": [
+            "index.php",
+            "helpers/bhw_file_helper.php",
+            "helpers/bhw_helper.php"
+        ]
+    },
+    "license": "STD",
+    "authors": [
+        {
+            "name": "Bayu Pratama",
+            "email": "bayu.furatama@gmail.com"
+        }
+    ]
+}
