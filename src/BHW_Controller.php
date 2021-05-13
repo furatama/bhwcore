@@ -243,6 +243,12 @@ class BHW_Controller extends RestController
 
 		$result = $this->model->delete($delete_params);
 
+		if ($result === null)
+			return $this->response([
+				'status' => false,
+				'message' => "data tidak dihapus karena dipakai oleh tabel lain",
+			], BHW_Controller::HTTP_BAD_REQUEST);
+
 		if ($result === 0)
 			return $this->response([
 				'status' => false,

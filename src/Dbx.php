@@ -26,6 +26,7 @@ class Dbx { //sync-query
 	public function insert($table, $data, $pk_field) {
 		$CI = $this->CI;
 		for ($i=$this->query_trial; $i > 0; $i--) { 
+			$CI->db->reset_query();
 			$CI->db->insert($table, $data);
 			$db_error = $this->_get_db_error();
 			if ($db_error === FALSE) {
@@ -80,6 +81,7 @@ class Dbx { //sync-query
 		}
 
 		for ($i = $this->query_trial; $i > 0; $i--) { 
+			$CI->db->reset_query();
 			$this->_queries_to_where($where);
 			$CI->db->update($table, $data);
 			$db_error = $this->_get_db_error();
@@ -110,7 +112,9 @@ class Dbx { //sync-query
 		}
 
 		for ($i = $this->query_trial; $i > 0; $i--) { 
-			$CI->db->delete($table, $where);
+			$CI->db->reset_query();
+			$this->_queries_to_where($where);
+			@$CI->db->delete($table);
 			$db_error = $this->_get_db_error();
 			if ($db_error === FALSE) {
 				break;
@@ -122,7 +126,7 @@ class Dbx { //sync-query
 				"table" => $table,
 				"data" => $prev_data ?? [],
 			]);
-			return ['ok' => $CI->db->affected_rows()];
+			return ['ok' => @$CI->db->affected_rows()];
 		} else {
 			return ['error' => $db_error];
 		}

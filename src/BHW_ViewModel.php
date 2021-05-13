@@ -36,7 +36,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
-			$db_get = $this->db->get($this->table);
+			$db_get = @$this->db->get($this->table);
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -51,7 +51,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
 			$this->db->limit(1);
-			$db_get = $this->db->get($this->table);
+			$db_get = @$this->db->get($this->table);
 			$this->get_db_error();
 			return $this->_fetch_single($db_get);
 		} catch (\Throwable $th) {
@@ -65,13 +65,13 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
-			$db_count = $this->db->count_all_results($this->table);
+			$db_count = @$this->db->count_all_results($this->table);
 			$this->get_db_error();
 
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where_page($queries);
 			$this->parse_attributes($select_attributes);
-			$db_get = $this->db->get($this->table);
+			$db_get = @$this->db->get($this->table);
 			$this->get_db_error();
 			return [
 				"data" => $this->_fetch($db_get),
@@ -90,7 +90,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($where);
 			$this->parse_attributes($opts);
-			$db_get = $this->db->get($this->table);
+			$db_get = @$this->db->get($this->table);
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -103,7 +103,7 @@ class BHW_ViewModel extends BHW_Hub
 		try {
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
-			$db_get = $this->db->get($this->table);
+			$db_get = @$this->db->get($this->table);
 			$this->get_db_error();
 			$data = [];
 			while ($row = $db_get->unbuffered_row('array')) {
