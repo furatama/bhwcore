@@ -192,20 +192,24 @@ class BHW_ViewModel extends BHW_Hub
 		$this->db->order_by($order_by ?? $this->primary_key, $order_dir);
 	}
 
+	public function mutate_output(&$row) {
+		foreach ($row as $key => $value) {
+			if ($value === "t") {
+				$row[$key] = true;
+				continue;
+			}
+			if ($value === "f") {
+				$row[$key] = false;
+				continue;
+			}
+		}
+	}
+
 	protected function _fetch($query)
 	{
 		$data = [];
 		while ($row = $query->unbuffered_row('array')) {
-			foreach ($row as $key => $value) {
-				if ($value === "t") {
-					$row[$key] = true;
-					continue;
-				}
-				if ($value === "f") {
-					$row[$key] = false;
-					continue;
-				}
-			}
+			$this->mutate_output($row);
 			$data[] = $row;
 		}
 		return $data;

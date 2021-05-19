@@ -1,4 +1,5 @@
 <?php
+
 namespace bhw\BhawanaCore;
 
 defined('BASEPATH') or exit('No direct script access allowed');
@@ -299,7 +300,7 @@ class BHW_Controller extends RestController
 		}
 		$auth_token = str_replace('Bearer ', '', $auth_token);
 		$this->load->library('jwt_auth');
-		return (array) $this->jwt_auth->parse_token($auth_token);
+		return json_decode(json_encode($this->jwt_auth->parse_token($auth_token)), TRUE);
 	}
 
 	protected function authenticate($auth_if = null)
