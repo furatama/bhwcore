@@ -63,7 +63,7 @@ class BHW_ViewModel extends BHW_Hub
 	{
 		try {
 			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
+			$this->convert_queries_into_where_page_count($queries);
 			$this->parse_attributes($select_attributes);
 			$db_count = $this->db->count_all_results($this->table);
 			$this->get_db_error();
@@ -166,6 +166,20 @@ class BHW_ViewModel extends BHW_Hub
 		$queries['page'] = $page;
 		$queries['per_page'] = $per_page;
 		$this->db->limit($per_page, $per_page * ($page - 1));
+		$this->convert_queries_into_where($queries);
+	}
+
+	//Mengconvert query string menjadi klausa where pada sistem page (untuk counting)
+	public function convert_queries_into_where_page_count(&$queries)
+	{
+		if (isset($queries['q']) && !empty($this->searchable_fields)) {
+			$search_q = $queries['q'];
+			$this->db->group_start();
+			foreach ($this->searchable_fields as $field) {
+				$this->db->or_like("LOWER($field::varchar)", strtolower($search_q));
+			}
+			$this->db->group_end();
+		}
 		$this->convert_queries_into_where($queries);
 	}
 

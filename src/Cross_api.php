@@ -61,7 +61,21 @@ class Cross_api {
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
 		}
-		
+	}
+
+	public function put_request($uri, $req_body = []) {
+
+		try {
+			$response = $this->_client->request('PUT', $uri, [
+				"json" => $req_body,
+				"headers" => $this->headers()
+			]);
+			$body = $response->getBody()->getContents();
+			$body_data = json_decode($body, true);
+			return $body_data;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
 	}
 
 	public function xapi_request($uri, $select = [], $where = [], $opts = []) {
