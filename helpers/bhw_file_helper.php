@@ -22,7 +22,7 @@ if (!function_exists('bh_upload_file')) {
 		}
 
 		$file_ext = pathinfo($_FILES[$file_name]['name'], PATHINFO_EXTENSION);
-		$_FILES[$file_name]['name'] = base64_encode($_FILES[$file_name]['name'] . ':' . date('Y-m-d H:i:s')) . '.' . $file_ext;
+		$_FILES[$file_name]['name'] = $_FILES[$file_name]['name'] . "_" . date('n') . substr(base64_encode(date('H:i:s')), 0, 3) . '.' . $file_ext;
 
 		if (!$CI->upload->do_upload($file_name)) {
 			$error = array('error' => $CI->upload->error_msg);
