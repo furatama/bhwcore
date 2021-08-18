@@ -278,14 +278,14 @@ class BHW_Controller extends RestController
 	}
 
 	//Check error query jika terdapat error langsung kirim response 500 (SERVER INTERNAL ERROR)
-	protected function error_check($error)
+	protected function error_check($error, $error_code = 500)
 	{
 		if ($error && !is_array($error) && !is_object($error) && substr($error, 0, 4) === "ERR:") {
 			$error = substr($error, 4, strlen($error));
 			return $this->response([
 				'status' => false,
 				'message' => "$error",
-			], BHW_Controller::HTTP_INTERNAL_ERROR);
+			], $error_code);
 		}
 	}
 

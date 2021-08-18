@@ -4,6 +4,7 @@ namespace bhw\BhawanaCore;
 defined('BASEPATH') or exit('No direct script access allowed');
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 
 class Cross_api {
 
@@ -33,6 +34,17 @@ class Cross_api {
 		];
 	}
 
+	private function _parse_error($ex) {
+		$message = "";
+		try {
+			$message = json_decode($ex, true);
+			$message = $message["message"];
+		} catch(\Throwable $th) {
+			$message = "tak terdefinisi";
+		}
+		return "ERR:$message";
+	}
+
 	public function get_request($uri, $query = []) {
 		try {
 			$response = $this->_client->request('GET', $uri, [
@@ -42,6 +54,8 @@ class Cross_api {
 			$body = $response->getBody();
 			$body_data = json_decode($body, true);
 			return $body_data;
+		} catch (ClientException $ex) {
+			return $this->_parse_error($ex->getResponse()->getBody());
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
 		}
@@ -49,7 +63,6 @@ class Cross_api {
 	}
 
 	public function post_request($uri, $req_body = []) {
-
 		try {
 			$response = $this->_client->request('POST', $uri, [
 				"json" => $req_body,
@@ -58,13 +71,14 @@ class Cross_api {
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
 			return $body_data;
+		} catch (ClientException $ex) {
+			return $this->_parse_error($ex->getResponse()->getBody()->getContents());
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
-		}
+		}		
 	}
 
 	public function put_request($uri, $req_body = []) {
-
 		try {
 			$response = $this->_client->request('PUT', $uri, [
 				"json" => $req_body,
@@ -73,10 +87,13 @@ class Cross_api {
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
 			return $body_data;
+		} catch (ClientException $ex) {
+			return $this->_parse_error($ex->getResponse()->getBody()->getContents());
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
-		}
+		}		
 	}
+	
 
 	public function xapi_request($uri, $select = [], $where = [], $opts = []) {
 		try {
@@ -91,9 +108,10 @@ class Cross_api {
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
 			return $body_data;
+		} catch (ClientException $ex) {
+			return $this->_parse_error($ex->getResponse()->getBody()->getContents());
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
-		}
-		
+		}		
 	}
 }
