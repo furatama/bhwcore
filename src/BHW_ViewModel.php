@@ -133,15 +133,23 @@ class BHW_ViewModel extends BHW_Hub
 	{
 		$converted_count = 0;
 		foreach ($queries as $field => $value) {
-			$fd = explode(" ", $field)[0];
+			$fexp = explode(" ", $field);
+			$fd = $fexp[0];
+			$param = isset($fexp[1]) ? $fexp[1] : "";
 			if (!in_array($fd, $this->whereable_fields))
 				continue;
 
 			if (is_array($value)) {
 				if (!empty($value))
-					$this->db->where_in($field, $value);
+					if ($param == "<>" || $param =="!=")
+						$this->db->where_not_in($fd, $value);
+					else
+						$this->db->where_in($fd, $value);
 			} else if (is_array(json_decode($value))) {
-				$this->db->where_in($field, json_decode($value));
+				if ($param == "<>" || $param =="!=")
+					$this->db->where_not_in($fd, json_decode($value));
+				else
+					$this->db->where_in($fd, json_decode($value));
 			} else {
 				$this->db->where($field, $value);
 			}
