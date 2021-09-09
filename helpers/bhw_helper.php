@@ -98,3 +98,14 @@ if (!function_exists('bh_hak_akses_cek')) {
         return in_array($akses, $akses_list) || in_array('SUPA', $akses_list);
     }
 }
+
+if (!function_exists('bh_log')) {
+    function bh_log(array $data)
+    {
+        $date = date('Y-m-d H:i:s');
+		$log = "[" . $date . "] " . implode(" ", $data) . "\n";
+		$file = fopen('log.txt', 'a');
+		fwrite($file, $log);
+		fclose($file);
+    }
+}

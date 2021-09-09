@@ -13,6 +13,7 @@ class BHW_Controller extends RestController
 	public function __construct()
 	{
 		parent::__construct();
+		bh_log([$this->module ?? "", "BEGIN"]);
 	}
 
 	//Inisialisasi model dan modul untuk dijalankan di program
@@ -52,6 +53,7 @@ class BHW_Controller extends RestController
 		// 		'message' => "data tidak ditemukan",
 		// 	], BHW_Controller::HTTP_NOT_FOUND);
 
+		bh_log([$this->module ?? "", "GET END"]);
 		return $this->response([
 			'status' => true,
 			'message' => "data ditemukan",
@@ -72,6 +74,7 @@ class BHW_Controller extends RestController
 
 		$this->error_check($result);
 
+		bh_log([$this->module ?? "", "GET SINGLE END"]);
 		if (empty($result) || $result == null)
 			return $this->response([
 				'status' => false,
@@ -98,6 +101,7 @@ class BHW_Controller extends RestController
 
 		$this->error_check($result);
 
+		bh_log([$this->module ?? "", "GET PAGE END"]);
 		if (empty($result))
 			return $this->response([
 				'status' => false,
@@ -128,6 +132,7 @@ class BHW_Controller extends RestController
 
 		$this->error_check($result);
 
+		bh_log([$this->module ?? "", "XAPI POST END"]);
 		if (empty($result))
 			return $this->response([
 				'status' => false,
@@ -157,6 +162,7 @@ class BHW_Controller extends RestController
 
 		$result = $this->model->create($post_params);
 
+		bh_log([$this->module ?? "", "POST END"]);
 		if ($result === 0)
 			return $this->response([
 				'status' => false,
@@ -195,6 +201,7 @@ class BHW_Controller extends RestController
 
 		$this->error_check($result);
 
+		bh_log([$this->module ?? "", "PUT END"]);
 		if ($result === 0)
 			return $this->response([
 				'status' => false,
@@ -219,6 +226,7 @@ class BHW_Controller extends RestController
 
 		$result = $this->model->delete($delete_params);
 
+		bh_log([$this->module ?? "", "DELETE DELETE END"]);
 		if ($result === 0)
 			return $this->response([
 				'status' => false,
@@ -244,6 +252,7 @@ class BHW_Controller extends RestController
 
 		$result = $this->model->delete($delete_params);
 
+		bh_log([$this->module ?? "", "POST DELETE END"]);
 		if ($result === null)
 			return $this->response([
 				'status' => false,
