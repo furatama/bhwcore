@@ -13,7 +13,7 @@ class BHW_Controller extends RestController
 	public function __construct()
 	{
 		parent::__construct();
-		bh_log([$this->module ?? "", "BEGIN"]);
+		bh_log(["CONTROLLER START"]);
 	}
 
 	//Inisialisasi model dan modul untuk dijalankan di program
@@ -22,6 +22,7 @@ class BHW_Controller extends RestController
 		$this->load->model($model_name);
 		$this->model = $this->{$model_name};
 		$this->module = $module;
+		bh_log([$this->module ?? "", "CONTROLLER INIT"]);
 	}
 
 	//Fungsi untuk mutasi input
