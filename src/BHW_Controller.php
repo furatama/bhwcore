@@ -22,6 +22,7 @@ class BHW_Controller extends RestController
 		$this->load->model($model_name);
 		$this->model = $this->{$model_name};
 		$this->module = $module;
+		bh_log($this->input->request_headers());
 		bh_log([$this->module ?? "", "CONTROLLER INIT"]);
 	}
 

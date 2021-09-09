@@ -105,8 +105,9 @@ if (!function_exists('bh_log')) {
         $date = date('Y-m-d H:i:s');
         $dateonly = date('Y_m_d');
 		$ip = $_SERVER['REMOTE_ADDR'];
-		$log = "[" . $date . "] " . "($ip) " . implode(" ", $data) . "\n";
-		$file = fopen('application/logs/log_' . $dateonly, 'a');
+		$uri = $_SERVER['REQUEST_URI'];
+		$log = "[" . $date . "] " . "($ip@$uri)" . implode(" ", $data) . "\n";
+		$file = fopen('application/logs/' . $dateonly, 'a');
 		fwrite($file, $log);
 		fclose($file);
     }

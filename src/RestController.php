@@ -614,7 +614,7 @@ class RestController extends \CI_Controller
     public function response($data = null, $http_code = null, $continue = false)
     {
         //if profiling enabled then print profiling data
-		bh_log(["CONTROLLER RESPONSE"]);
+		bh_log(["CONTROLLER RESPONSE END"]);
         $isProfilingEnabled = $this->config->item('enable_profiling');
         if (!$isProfilingEnabled) {
             ob_start();
