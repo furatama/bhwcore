@@ -139,9 +139,17 @@ class BHW_ViewModel extends BHW_Hub
 	{
 		$converted_count = 0;
 		foreach ($queries as $field => $value) {
-			$fexp = explode(" ", $field);
-			$fd = $fexp[0];
-			$param = isset($fexp[1]) ? $fexp[1] : "";
+			$qry_param = "";
+			$preg_result = preg_match("/_([^a-zA-Z0-9]+)$/", $field, $qry_param);
+			if ($preg_result != 0) {
+				$fd = str_replace($qry_param[0] ?? "", "", $field);
+				$param = $qry_param[1] ?? "";
+			} else {
+				$fexp = explode(" ", $field);
+				$fd = $fexp[0];
+				$param = isset($fexp[1]) ? $fexp[1] : "";
+			}
+
 			if (!in_array($fd, $this->whereable_fields))
 				continue;
 
@@ -157,7 +165,31 @@ class BHW_ViewModel extends BHW_Hub
 				else
 					$this->db->where_in($fd, json_decode($value));
 			} else {
-				$this->db->where($field, $value);
+				switch ($param) {
+					case '~':
+					case '~~':
+						$this->db->like($fd, $value);
+						break;					
+					case '!~':
+					case '!~~':
+						$this->db->not_like($fd, $value);
+						break;					
+					case '%~':
+						$this->db->like($fd, $value, 'before');
+						break;					
+					case '!%~':
+						$this->db->not_like($fd, $value, 'before');
+						break;					
+					case '~%':
+						$this->db->like($fd, $value, 'after');
+						break;					
+					case '!~%':
+						$this->db->not_like($fd, $value, 'after');
+						break;					
+					default:
+						$this->db->where($fd, $value);
+						break;
+				}
 			}
 			$converted_count++;
 		}
