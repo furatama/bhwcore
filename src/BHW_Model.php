@@ -27,8 +27,8 @@ class BHW_Model extends BHW_ViewModel {
 			}
 
 			$result = $this->dbx->insert($this->table, $data_params, $this->primary_key);
+			bh_log(["INSERT", count($data_params), "| INSERTED: ", $result['ok'] ? 1 : 0]);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "CREATE END"]);
 			if (isset($result['error'])) {
 				throw new \Exception($result['error']);
 			}
@@ -51,11 +51,12 @@ class BHW_Model extends BHW_ViewModel {
 			}, $data_params);
 
 			$result = $this->dbx->insert_batch($this->table, $data_params, $constant_params);
+			bh_log(["INSERT BATCH", count($data_params), "| INSERTED: ", $result['ok'] ?? 0]);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "CREATE_BATCH END"]);
 			if (isset($result['error'])) {
 				throw new \Exception($result['error']);
 			}
+			
 			return $result['ok'];
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -85,7 +86,6 @@ class BHW_Model extends BHW_ViewModel {
 
 			$result = $this->dbx->update_single($this->table, $data_params, $where_queries);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "UPDATE END"]);
 			if (isset($result['error'])) {
 				throw new \Exception($result['error']);
 			}
@@ -109,7 +109,6 @@ class BHW_Model extends BHW_ViewModel {
 				$result = $this->dbx->delete($this->table, $where_queries);
 			}
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "DELETE END"]);
 			if (isset($result['error'])) {
 				throw new \Exception($result['error']);
 			}

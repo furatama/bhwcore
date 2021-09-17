@@ -18,7 +18,6 @@ class BHW_ViewModel extends BHW_Hub
 	public function __construct()
 	{
 		parent::__construct();
-		bh_log([$this->table ?? "no_table", "BEGIN"]);
 		if (empty($this->shown_fields))
 			$this->shown_fields = $this->db->list_fields($this->table);
 
@@ -39,7 +38,6 @@ class BHW_ViewModel extends BHW_Hub
 			$this->parse_attributes($select_attributes);
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "READ END"]);
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -55,7 +53,6 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->limit(1);
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "READ_SINGLE END"]);
 			return $this->_fetch_single($db_get);
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -76,7 +73,6 @@ class BHW_ViewModel extends BHW_Hub
 			$this->parse_attributes($select_attributes);
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "READ_PAGE END"]);
 			return [
 				"data" => $this->_fetch($db_get),
 				"data_count" => $db_count,
@@ -96,7 +92,6 @@ class BHW_ViewModel extends BHW_Hub
 			$this->parse_attributes($opts);
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
-			bh_log([$this->table ?? "no_table", "READ XAPI END"]);
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -115,7 +110,6 @@ class BHW_ViewModel extends BHW_Hub
 				if (!in_array($row[$field], $data))
 					$data[] = $row[$field];
 			}
-			bh_log([$this->table ?? "no_table", "READ_PLUCK END"]);
 			return $data;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";

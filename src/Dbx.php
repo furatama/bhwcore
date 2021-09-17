@@ -18,6 +18,14 @@ class Dbx { //sync-query
 		$this->query_trial = static::QUERY_TRIAL;
 	}
 
+	public function trans_start() {
+		$this->CI->db->trans_start();
+	}
+
+	public function trans_complete() {
+		$this->CI->db->trans_complete();
+	}
+
 	public function start_sync() {
 		$this->rollback_list = [];
 		$this->query_trial = static::QUERY_TRIAL;
