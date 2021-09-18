@@ -181,7 +181,7 @@ class BHW_ViewModel extends BHW_Hub
 						$this->db->not_like($fd, $value, 'after');
 						break;					
 					default:
-						$this->db->where($fd, $value);
+						$this->db->where($field, $value);
 						break;
 				}
 			}
