@@ -12,7 +12,7 @@ class Cross_api {
 	protected $modul;
 	private $_token;
 	private $_client;
-	private $_timeout = 5;
+	private $_timeout = 6;
 
 	public function __construct()
 	{
