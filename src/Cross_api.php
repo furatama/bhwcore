@@ -12,6 +12,7 @@ class Cross_api {
 	protected $modul;
 	private $_token;
 	private $_client;
+	private $_timeout = 5;
 
 	public function __construct()
 	{
@@ -49,7 +50,9 @@ class Cross_api {
 		try {
 			$response = $this->_client->request('GET', $uri, [
 				"query" => $query,
-				"headers" => $this->headers()
+				"headers" => $this->headers(),
+				"connect_timeout" => $this->_timeout,
+				"timeout" => $this->_timeout,
 			]);
 			$body = $response->getBody();
 			$body_data = json_decode($body, true);
@@ -66,7 +69,9 @@ class Cross_api {
 		try {
 			$response = $this->_client->request('POST', $uri, [
 				"json" => $req_body,
-				"headers" => $this->headers()
+				"headers" => $this->headers(),
+				"connect_timeout" => $this->_timeout,
+				"timeout" => $this->_timeout,
 			]);
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
@@ -82,7 +87,9 @@ class Cross_api {
 		try {
 			$response = $this->_client->request('PUT', $uri, [
 				"json" => $req_body,
-				"headers" => $this->headers()
+				"headers" => $this->headers(),
+				"connect_timeout" => $this->_timeout,
+				"timeout" => $this->_timeout,
 			]);
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
@@ -104,6 +111,8 @@ class Cross_api {
 					'opts' => $opts,
 				],
 				"headers" => $this->headers(),
+				"connect_timeout" => $this->_timeout,
+				"timeout" => $this->_timeout,
 			]);
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
