@@ -10,9 +10,9 @@ class Cross_api {
 
 	protected $uri;
 	protected $modul;
-	private $_token;
-	private $_client;
-	private $_timeout = 45;
+	protected $_token;
+	protected $_client;
+	protected $_timeout = 45;
 
 	public function __construct()
 	{
