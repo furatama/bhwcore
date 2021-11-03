@@ -28,14 +28,14 @@ class Cross_api {
 		]);
 	}
 
-	private function headers() {
+	protected function headers() {
 		return [
 			'Content-Type' => "application/json",
 			'Authorization' => "Bearer {$this->_token}"
 		];
 	}
-
-	private function _parse_error($ex) {
+	
+	protected function _parse_error($ex) {
 		$message = "";
 		try {
 			$message = json_decode($ex, true);
