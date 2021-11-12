@@ -125,20 +125,19 @@ class BHW_Controller extends RestController
 		$get_queries = $this->get();
 		$file_name = $get_queries['file_name'] ?? $this->module ?? "csv_report";
 		$result = $this->model->to_csv($file_name, $get_queries);
-
 		$this->error_check($result);
-
-		if (empty($result))
+		if ($result === true) {
 			return $this->response([
-				'status' => false,
-				'message' => "data tidak ditemukan",
-			], BHW_Controller::HTTP_NOT_FOUND);
+				'status' => true,
+				'message' => "data ditemukan",
+				'file' => $file_name,
+			], BHW_Controller::HTTP_OK);
+		}
 
 		return $this->response([
-			'status' => true,
-			'message' => "data ditemukan",
-			'file' => $file_name,
-		], BHW_Controller::HTTP_OK);
+			'status' => false,
+			'message' => "data tidak ditemukan",
+		], BHW_Controller::HTTP_NOT_FOUND);
 	}
 
 	/*	Mengakomodir GET request dari /<modul>, responsenya single result

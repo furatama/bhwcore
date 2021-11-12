@@ -102,6 +102,7 @@ class BHW_ViewModel extends BHW_Hub
 				fputcsv($file, $rw);
 			}			
 			fclose($file);
+			return true;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
 		}
