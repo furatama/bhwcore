@@ -124,7 +124,7 @@ class BHW_Controller extends RestController
 
 		$get_queries = $this->get();
 		$file_name = $get_queries['file_name'] ?? $this->module ?? "csv_report";
-		$result = $this->model->to_csv($get_queries);
+		$result = $this->model->to_csv($file_name, $get_queries);
 
 		$this->error_check($result);
 
