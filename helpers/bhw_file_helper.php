@@ -6,6 +6,7 @@ if (!function_exists('bh_upload_file')) {
 
 		$up = $config['upload_path'];
 		$config['upload_path'] = "uploads/sym/" . $config['upload_path'];
+		$config['max_size'] = 100000;
 
 		$CI = &get_instance();
 		$CI->load->library('upload', $config);
