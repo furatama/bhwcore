@@ -130,7 +130,7 @@ class BHW_Controller extends RestController
 			return $this->response([
 				'status' => true,
 				'message' => "data ditemukan",
-				'file' => "csv/" + $file_name + ".csv",
+				'file' => "csv/" . $file_name . ".csv",
 			], BHW_Controller::HTTP_OK);
 		}
 
