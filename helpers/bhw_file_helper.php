@@ -35,6 +35,26 @@ if (!function_exists('bh_upload_file')) {
 	}
 }
 
+if (!function_exists('bh_open_csv')) {
+	function bh_open_csv($file_name)
+	{
+
+		$upload_path = "uploads/sym/csv/";
+
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0777, true);
+			try {
+				$indexFile = fopen($upload_path . "/index.html", "w");
+				$txt = "<!DOCTYPE html><html><head><title>403 Forbidden</title></head><body><p>Directory access is forbidden.</p></body></html>";
+				fwrite($indexFile, $txt);
+				fclose($indexFile);
+			} catch (Exception $error) {
+			}
+		}
+
+		return fopen($upload_path . "/" . $file_name . ".csv", "w");
+	}
+}
 
 if (!function_exists('bh_upload_file_ym')) {
 	function bh_upload_file_ym($file_name, $config)

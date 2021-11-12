@@ -83,6 +83,29 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
+	public function to_csv($file_name, $queries, $select_attributes = [])
+	{
+		try {
+			$col = $this->retrieve_shown();
+			$this->db->select($col);
+			$this->convert_queries_into_where_page($queries);
+			$this->parse_attributes($select_attributes);
+			$db_get = $this->db->get($this->table);
+			$this->get_db_error();
+			$file = bh_open_csv($file_name);
+			while ($row = $db_get->unbuffered_row('array')) {
+				$rw = [];
+				foreach ($col as $c) {
+					$rw[] = $row[$c];
+				}
+				fputcsv($file, $rw);
+			}			
+			fclose($file);
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
 	public function read_xapi($select = [], $where = [], $opts = [])
 	{
 		try {
@@ -126,6 +149,18 @@ class BHW_ViewModel extends BHW_Hub
 			$shown_fields = array_diff($shown_fields, $this->hidden_fields);
 
 		return implode(',', $shown_fields);
+	}
+
+	public function retrieve_shown()
+	{
+		$shown_fields = $this->shown_fields;
+		if (empty($shown_fields))
+			return $this->db->list_fields($this->table);
+
+		if (!empty($this->hidden_fields))
+			$shown_fields = array_diff($shown_fields, $this->hidden_fields);
+
+		return $shown_fields;
 	}
 
 	//Mengconvert query string menjadi klausa where
