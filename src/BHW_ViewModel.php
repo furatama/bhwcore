@@ -93,13 +93,13 @@ class BHW_ViewModel extends BHW_Hub
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
 			$file = bh_open_csv($file_name);
-			fputcsv($file, $col, ";");
+			fputcsv($file, $col, ",");
 			while ($row = $db_get->unbuffered_row('array')) {
 				$rw = [];
 				foreach ($col as $c) {
 					$rw[] = $row[$c];
 				}
-				fputcsv($file, $rw, ";");
+				fputcsv($file, $rw, ",");
 			}			
 			fclose($file);
 			return true;
