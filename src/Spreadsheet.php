@@ -1,4 +1,6 @@
 <?php
+namespace bhw\BhawanaCore;
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet as SS;
