@@ -1,4 +1,5 @@
 <?php
+
 namespace bhw\BhawanaCore;
 
 defined('BASEPATH') or exit('No direct script access allowed');
@@ -71,11 +72,12 @@ class Spreadsheet
 		$columns = $CI->xmdl->retrieve_shown($queries);
 
 		$this->col = $start_col;
-		foreach ($columns as $col) {
+		foreach ($columns as $col) {			
 			if (isset($column_alias[$col]))
 				$col = $column_alias[$col];
 			else
 				$col = ucwords(str_replace('_', ' ', $col));
+
 			$sheet->setCellValue($this->getCell($this->col, $this->row), $col);
 			$this->col++;
 		}
@@ -86,8 +88,11 @@ class Spreadsheet
 				$callback($cur);
 			}
 			$this->col = $start_col;
-			foreach ($cur as $value) {
-				$sheet->setCellValue($this->getCell($this->col, $this->row), $value);
+			foreach ($cur as $key => $value) {
+				if (str_contains($key, 'kode_')) 
+					$sheet->setCellValueExplicit($this->getCell($this->col, $this->row), $value, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+				else
+					$sheet->setCellValue($this->getCell($this->col, $this->row), $value);
 				$this->col++;
 			}
 			$this->row++;
