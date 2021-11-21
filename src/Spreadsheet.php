@@ -29,7 +29,7 @@ class Spreadsheet
 			if ($col_alp_x > $alp_count) {
 				$col_alp_x = $col_alp_x % $alp_count;
 			}
-			return $alphabet[$col_alp_x] . $alphabet[$col_alp];
+			return $alphabet[$col_alp_x - 1] . $alphabet[$col_alp];
 		}
 		return $alphabet[$col_alp];
 	}
@@ -60,15 +60,15 @@ class Spreadsheet
 			return;
 
 		$CI = &get_instance();
-		$CI->load->model($model, 'xlsx_model');
+		$CI->load->model($model, 'xmdl');
 		$spreadsheet = $this->spreadsheet;
 		$sheet = $spreadsheet->getActiveSheet();
 
 		$start_col = $this->col;
 		$start_row = $this->row;
 
-		$cursor = $CI->xlsx_model->read_cursor($queries, $select_attributes);
-		$columns = $CI->xlsx_model->retrieve_shown($queries);
+		$cursor = $CI->xmdl->read_cursor($queries, $select_attributes);
+		$columns = $CI->xmdl->retrieve_shown($queries);
 
 		$this->col = $start_col;
 		foreach ($columns as $col) {

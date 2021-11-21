@@ -149,7 +149,7 @@ class BHW_Controller extends RestController
 		$file_name = strtolower(MODUL ?? '') . "_" . $this->module . "_" . date("Ymd");
 
 		$this->load->library('Spreadsheet');
-		$this->spreadsheet->render_model($this->model_name ?? $this->xlsx_model);
+		$this->spreadsheet->render_model($this->xlsx_model ?? $this->model_name);
 		$this->spreadsheet->save_xlsx($file_name);
 
 		return $this->response([
