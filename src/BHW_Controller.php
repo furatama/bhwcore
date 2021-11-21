@@ -142,14 +142,15 @@ class BHW_Controller extends RestController
 		], BHW_Controller::HTTP_NOT_FOUND);
 	}
 
-	public function xlsx_post()
+	public function xlsx_get()
 	{
+		$get_queries = $this->get();
 
 		$this->authenticate();
 		$file_name = strtolower(MODUL ?? '') . "_" . $this->module . "_" . date("Ymd");
 
 		$this->load->library('Spreadsheet');
-		$this->spreadsheet->render_model($this->xlsx_model ?? $this->model_name);
+		$this->spreadsheet->render_model($this->xlsx_model ?? $this->model_name, $get_queries);
 		$this->spreadsheet->save_xlsx($file_name);
 
 		return $this->response([
