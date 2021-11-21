@@ -93,13 +93,13 @@ class BHW_ViewModel extends BHW_Hub
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
 			$file = bh_open_csv($file_name);
-			fputcsv($file, $col, ";");
+			fputcsv($file, $col, ",");
 			while ($row = $db_get->unbuffered_row('array')) {
 				$rw = [];
 				foreach ($col as $c) {
 					$rw[] = $row[$c];
 				}
-				fputcsv($file, $rw, ";");
+				fputcsv($file, $rw, ",");
 			}			
 			fclose($file);
 			return true;
@@ -136,6 +136,21 @@ class BHW_ViewModel extends BHW_Hub
 					$data[] = $row[$field];
 			}
 			return $data;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
+	public function read_cursor($queries, $select_attributes = [])
+	{
+		try {
+			$col = $this->retrieve_shown();
+			$this->db->select($col);
+			$this->convert_queries_into_where($queries);
+			$this->parse_attributes($select_attributes);
+			$db_get = $this->db->get($this->table);
+			$this->get_db_error();
+			return $db_get;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
 		}

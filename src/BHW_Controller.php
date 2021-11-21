@@ -7,6 +7,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class BHW_Controller extends RestController
 {
 	public $model;
+	public $model_name;
 	public $module;
 	public $my_auth_if = [];
 
@@ -21,6 +22,7 @@ class BHW_Controller extends RestController
 		$this->load->model($model_name);
 		$this->model = $this->{$model_name};
 		$this->module = $module;
+		$this->model_name = $model_name;
 	}
 
 	//Fungsi untuk mutasi input
@@ -138,6 +140,23 @@ class BHW_Controller extends RestController
 			'status' => false,
 			'message' => "data tidak ditemukan",
 		], BHW_Controller::HTTP_NOT_FOUND);
+	}
+
+	public function xlsx_post()
+	{
+
+		$this->authenticate();
+		$file_name = strtolower(MODUL ?? '') . "_" . $this->module . "_" . date("Ymd");
+
+		$this->load->library('Spreadsheet');
+		$this->spreadsheet->render_model($this->model_name ?? $this->xlsx_model);
+		$this->spreadsheet->save_xlsx($file_name);
+
+		return $this->response([
+			'status' => true,
+			'message' => "data ditemukan",
+			'file' => "xlsx/" . $file_name . ".xlsx",
+		], BHW_Controller::HTTP_OK);
 	}
 
 	/*	Mengakomodir GET request dari /<modul>, responsenya single result
