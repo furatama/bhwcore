@@ -61,7 +61,7 @@ if (!function_exists('bh_open_xlsx')) {
 	function bh_open_xlsx($file_name)
 	{
 
-		$upload_path = "uploads/sym/xls/";
+		$upload_path = "uploads/sym/xlsx/";
 
 		if (!is_dir($upload_path)) {
 			mkdir($upload_path, 0777, true);
