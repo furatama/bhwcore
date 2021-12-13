@@ -59,6 +59,18 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
+	public function read_count($queries)
+	{
+		try {
+			$this->convert_queries_into_where($queries);
+			$db_count = $this->db->count_all_results($this->table);
+			$this->get_db_error();
+			return $db_count;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
 	public function read_page($queries, $select_attributes = [])
 	{
 		try {
