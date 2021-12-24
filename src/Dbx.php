@@ -6,6 +6,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Dbx { //sync-query
 
 	const QUERY_TRIAL = 3; //jumlah eksekusi query sebelum rollback
+	
+	public $trans_count = 0;
 
 	private $CI;
 	private $query_trial;
@@ -19,11 +21,19 @@ class Dbx { //sync-query
 	}
 
 	public function trans_start() {
-		$this->CI->db->trans_start();
+		if ($this->trans_count <= 0) {
+			$this->CI->db->trans_start();
+			$this->trans_count = 0;
+		}
+		$this->trans_count++;
 	}
 
 	public function trans_complete() {
-		$this->CI->db->trans_complete();
+		$this->trans_count--;
+		if ($this->trans_count <= 0) {
+			$this->CI->db->trans_complete();
+			$this->trans_count = 0;
+		}
 	}
 
 	public function start_sync() {
@@ -195,6 +205,16 @@ class Dbx { //sync-query
 				$this->CI->db->where($field, $value);
 			}
 		}
+	}
+	
+	public function query($query, $params) {
+		if (!is_array($params)) {
+			$params = [$params];
+		}
+		foreach ($params as $key => $value) {
+			$params[$key] = $this->CI->db->escape($value);
+		}
+		return $this->CI->db->query($query, $params);
 	}
 
 
