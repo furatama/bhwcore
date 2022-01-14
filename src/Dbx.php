@@ -197,12 +197,54 @@ class Dbx { //sync-query
 	private function _queries_to_where($queries)
 	{
 		foreach ($queries as $field => $value) {
-			if (is_array(($value))) {
-				$this->CI->db->where_in($field, ($value));
-			} else if (is_array(json_decode($value))) {
-				$this->CI->db->where_in($field, json_decode($value));
+			$qry_param = "";
+			$preg_result = preg_match("/_([^a-zA-Z0-9]+)$/", $field, $qry_param);
+			if ($preg_result != 0) {
+				$fd = str_replace($qry_param[0] ?? "", "", $field);
+				$param = $qry_param[1] ?? "";
 			} else {
-				$this->CI->db->where($field, $value);
+				$fexp = explode(" ", $field);
+				$fd = $fexp[0];
+				$param = isset($fexp[1]) ? $fexp[1] : "";
+			}
+
+			if (is_array($value)) {
+				if (!empty($value))
+					if ($param == "<>" || $param =="!=")
+						$this->CI->db->where_not_in($fd, $value);
+					else
+						$this->CI->db->where_in($fd, $value);
+			} else if (is_array(json_decode($value))) {
+				if ($param == "<>" || $param =="!=")
+					$this->CI->db->where_not_in($fd, json_decode($value));
+				else
+					$this->CI->db->where_in($fd, json_decode($value));
+			} else {
+				switch ($param) {
+					case '~':
+					case '~~':
+						$this->CI->db->like($fd, $value);
+						break;					
+					case '!~':
+					case '!~~':
+						$this->CI->db->not_like($fd, $value);
+						break;					
+					case '%~':
+						$this->CI->db->like($fd, $value, 'before');
+						break;					
+					case '!%~':
+						$this->CI->db->not_like($fd, $value, 'before');
+						break;					
+					case '~%':
+						$this->CI->db->like($fd, $value, 'after');
+						break;					
+					case '!~%':
+						$this->CI->db->not_like($fd, $value, 'after');
+						break;					
+					default:
+						$this->CI->db->where($field, $value);
+						break;
+				}
 			}
 		}
 	}
