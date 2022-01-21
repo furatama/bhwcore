@@ -18,6 +18,7 @@ class Cross_api {
 	{
 		$this->_client = new Client([
 			'base_uri' => $this->uri,
+			'verify' => false
 		]);
 		$key = COMPANY . $this->modul . "JWTKEY" . JWT_SALT;
 		$jwt = new Jwt_auth($key);
