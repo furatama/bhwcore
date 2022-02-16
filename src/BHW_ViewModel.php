@@ -307,7 +307,17 @@ class BHW_ViewModel extends BHW_Hub
 
 		$order_by = isset($atrs['order_by']) ? $atrs['order_by'] : $this->primary_key;
 		$order_dir = isset($atrs['order_dir']) ? $atrs['order_dir'] : $this->order_dir;
-		$this->db->order_by($order_by ?? $this->primary_key, $order_dir);
+		if (is_array($order_by)) {
+			foreach ($order_by as $key => $ob) {
+				if (is_array($order_dir)) {
+					$this->db->order_by($ob, $order_dir[$key]);
+				} else {
+					$this->db->order_by($ob, $order_dir);
+				}
+			}
+		} else {
+			$this->db->order_by($order_by, $order_dir);
+		}
 	}
 
 	public function mutate_output(&$row) {
