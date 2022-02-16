@@ -14,6 +14,7 @@ class BHW_ViewModel extends BHW_Hub
 	public $soft_delete; //aktifkan mode soft-delete (soft delete tidak menghapus data dari table tersebut)
 	public $is_hidden_enabled; //aktifkan mode show-hide
 	public $order_dir = 'DESC';
+	public $order_by;
 
 	public function __construct()
 	{
@@ -305,7 +306,8 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->where('is_hidden =', FALSE);
 		}
 
-		$order_by = isset($atrs['order_by']) ? $atrs['order_by'] : $this->primary_key;
+		$this->order_by = $this->order_by ?? $this->primary_key;
+		$order_by = isset($atrs['order_by']) ? $atrs['order_by'] : $this->order_by;
 		$order_dir = isset($atrs['order_dir']) ? $atrs['order_dir'] : $this->order_dir;
 		if (is_array($order_by)) {
 			foreach ($order_by as $key => $ob) {
@@ -316,7 +318,11 @@ class BHW_ViewModel extends BHW_Hub
 				}
 			}
 		} else {
-			$this->db->order_by($order_by, $order_dir);
+			if (is_array($order_dir)) {
+				$this->db->order_by($order_by, $order_dir[0]);
+			} else {
+				$this->db->order_by($order_by, $order_dir);
+			}
 		}
 	}
 
