@@ -181,8 +181,14 @@ class Join_collection
 		foreach ($arr_children as $arr_child) {
 			$child_id = $arr_child[$key_child];
 
-			if ($child_id == $parent_id)
-				$return_arr[] = $arr_child;
+			if (is_array($parent_id)) {
+				if (in_array($child_id, $parent_id))
+					$return_arr[] = $arr_child;
+			} else {
+				if ($parent_id === $child_id)
+					$return_arr[] = $arr_child;
+			}
+
 		}
 
 		if (!empty($return_arr))
