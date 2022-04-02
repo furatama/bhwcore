@@ -95,7 +95,7 @@ if (!function_exists('array_to_queries')) {
 if (!function_exists('bh_hak_akses_cek')) {
     function bh_hak_akses_cek(array $akses_list, string $akses)
     {
-        return in_array($akses, $akses_list) || in_array('SUPA', $akses_list);
+        return in_array($akses, $akses_list) || in_array('SUPA', $akses_list) || in_array('VISIT', $akses_list);
     }
 }
 
