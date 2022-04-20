@@ -86,6 +86,27 @@ class BHW_Controller extends RestController
 			'data' => $result
 		], BHW_Controller::HTTP_OK);
 	}
+	
+	public function check_duplicate_get()
+	{
+		$this->authenticate();
+
+		$get_queries = $this->get();
+		$result = $this->model->read_single($get_queries);
+
+		$this->error_check($result);
+
+		if (empty($result) || $result == null)
+			return $this->response([
+				'status' => true,
+				'message' => "data tidak duplikat",
+			], BHW_Controller::HTTP_OK);
+
+		return $this->response([
+			'status' => false,
+			'message' => "data duplikat"
+		], BHW_Controller::HTTP_BAD_REQUEST);
+	}
 
 	/*	Mengakomodir GET request dari /<modul>, responsenya single result
 	|
