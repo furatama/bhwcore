@@ -25,6 +25,7 @@ class BHW_Controller extends RestController
 		$this->module = $module;
 		$this->model_name = $model_name;
 		if ($vmodel) {
+		  $this->load->model($vmodel);
 		  $this->view_model = $this->{$vmodel};
 		}
 	}
