@@ -10,6 +10,7 @@ class BHW_Controller extends RestController
 	public $model_name;
 	public $module;
 	public $my_auth_if = [];
+	public $view_model;
 
 	public function __construct()
 	{
@@ -17,12 +18,15 @@ class BHW_Controller extends RestController
 	}
 
 	//Inisialisasi model dan modul untuk dijalankan di program
-	public function init($module, $model_name)
+	public function init($module, $model_name, $vmodel = null)
 	{
 		$this->load->model($model_name);
 		$this->model = $this->{$model_name};
 		$this->module = $module;
 		$this->model_name = $model_name;
+		if ($vmodel) {
+		  $this->view_model = $this->{$vmodel};
+		}
 	}
 
 	//Fungsi untuk mutasi input
@@ -92,7 +96,12 @@ class BHW_Controller extends RestController
 		$this->authenticate();
 
 		$get_queries = $this->get();
-		$result = $this->model->read_single($get_queries);
+		
+		if ($this->view_model) {
+		    $result = $this->view_model->read_single($get_queries);
+		} else {
+		    $result = $this->model->read_single($get_queries);
+		}
 
 		$this->error_check($result);
 
