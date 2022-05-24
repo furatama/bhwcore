@@ -136,7 +136,7 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_pluck($field, $queries = [])
+	public function read_pluck($field, $queries = [], $mutator = null)
 	{
 		try {
 			$this->db->select($this->select_shown());
@@ -144,9 +144,20 @@ class BHW_ViewModel extends BHW_Hub
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
 			$data = [];
+			if (is_array($field)) {
+				$field2 = array_key_first($field);
+				$field = $field[$field2];
+			}
 			while ($row = $db_get->unbuffered_row('array')) {
-				if (!in_array($row[$field], $data))
-					$data[] = $row[$field];
+				if (!isset($field2)) {
+					if (!in_array($row[$field], $data)) {
+						$data[] = $mutator && is_callable($mutator) ? $mutator($row[$field]) : $row[$field];
+					}
+				} else {
+					$rf2 = $row[$field2];
+					$d = $mutator && is_callable($mutator) ? $mutator($row[$field], $rf2) : $row[$field];
+					$data[$rf2] = $d;
+				}
 			}
 			return $data;
 		} catch (\Throwable $th) {
@@ -197,56 +208,75 @@ class BHW_ViewModel extends BHW_Hub
 	public function convert_queries_into_where($queries)
 	{
 		$converted_count = 0;
-		foreach ($queries as $field => $value) {
-			$qry_param = "";
-			$preg_result = preg_match("/_([^a-zA-Z0-9]+)$/", $field, $qry_param);
-			if ($preg_result != 0) {
-				$fd = str_replace($qry_param[0] ?? "", "", $field);
-				$param = $qry_param[1] ?? "";
+		foreach ($queries as $field => $value) {			
+			$fexp = explode(" ", $field);
+			if (count($fexp) <= 2) {
+				if (preg_match("/[^\w]/", $fexp[0]) === 0) {
+					$fd = $fexp[0];
+					$param = isset($fexp[1]) ? $fexp[1] : "";
+				} else {
+					$pref = isset($fexp[0]) ? $fexp[0] : "";
+					$fd = isset($fexp[1]) ? $fexp[1] : "";
+					$param = "";
+				}
 			} else {
-				$fexp = explode(" ", $field);
-				$fd = $fexp[0];
-				$param = isset($fexp[1]) ? $fexp[1] : "";
+				$pref = $fexp[0];
+				$fd = $fexp[1];
+				$param = isset($fexp[2]) ? $fexp[2] : "";
 			}
 
 			if (!in_array($fd, $this->whereable_fields))
 				continue;
 
+			$hasor = isset($pref) && $pref === "||";
+
 			if (is_array($value)) {
 				if (!empty($value))
 					if ($param == "<>" || $param =="!=")
-						$this->db->where_not_in($fd, $value);
+						if ($hasor)
+							$this->db->or_where_not_in($fd, $value);
+						else
+							$this->db->where_not_in($fd, $value);
 					else
-						$this->db->where_in($fd, $value);
+						if ($hasor)
+							$this->db->or_where_in($fd, $value);
+						else
+							$this->db->where_in($fd, $value);
 			} else if (is_array(json_decode($value))) {
 				if ($param == "<>" || $param =="!=")
-					$this->db->where_not_in($fd, json_decode($value));
+					if ($hasor)
+						$this->db->or_where_not_in($fd, json_decode($value));
+					else
+						$this->db->where_not_in($fd, json_decode($value));
 				else
-					$this->db->where_in($fd, json_decode($value));
+					if ($hasor)
+						$this->db->or_where_in($fd, json_decode($value));
+					else
+						$this->db->where_in($fd, json_decode($value));
 			} else {
 				switch ($param) {
 					case '~':
 					case '~~':
-						$this->db->like($fd, $value);
+						$hasor ? $this->db->or_like($fd, $value) : $this->db->like($fd, $value);
 						break;					
 					case '!~':
 					case '!~~':
-						$this->db->not_like($fd, $value);
+						$hasor ? $this->db->or_not_like($fd, $value) : $this->db->not_like($fd, $value);
 						break;					
 					case '%~':
-						$this->db->like($fd, $value, 'before');
+						$hasor ? $this->db->or_like($fd, $value, 'before') : $this->db->like($fd, $value, 'before');
 						break;					
 					case '!%~':
-						$this->db->not_like($fd, $value, 'before');
+						$hasor ? $this->db->or_not_like($fd, $value, 'before') : $this->db->not_like($fd, $value, 'before');
 						break;					
 					case '~%':
-						$this->db->like($fd, $value, 'after');
+						$hasor ? $this->db->or_like($fd, $value, 'after') : $this->db->like($fd, $value, 'after');
 						break;					
 					case '!~%':
-						$this->db->not_like($fd, $value, 'after');
+						$hasor ? $this->db->or_not_like($fd, $value, 'after') : $this->db->not_like($fd, $value, 'after');
 						break;					
 					default:
-						$this->db->where($field, $value);
+						$hasor ? $this->db->or_where($fd, $value) : $this->db->where($fd, $value);
 						break;
 				}
 			}
