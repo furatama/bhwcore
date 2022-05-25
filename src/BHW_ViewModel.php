@@ -276,7 +276,7 @@ class BHW_ViewModel extends BHW_Hub
 						$hasor ? $this->db->or_not_like($fd, $value, 'after') : $this->db->not_like($fd, $value, 'after');
 						break;					
 					default:
-						$hasor ? $this->db->or_where($fd, $value) : $this->db->where($fd, $value);
+						$hasor ? $this->db->or_where($field, $value) : $this->db->where($field, $value);
 						break;
 				}
 			}
