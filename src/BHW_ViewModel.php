@@ -288,7 +288,7 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page
 	public function convert_queries_into_where_page(&$queries)
 	{
-		if (isset($queries['q']) && !empty($this->searchable_fields)) {
+		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
 			$search_q = $queries['q'];
 			$this->db->group_start();
 			foreach ($this->searchable_fields as $field) {
