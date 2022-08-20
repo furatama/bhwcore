@@ -288,11 +288,11 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page
 	public function convert_queries_into_where_page(&$queries)
 	{
-		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
+		if (isset($queries['q']) && !empty($this->searchable_fields)) {
 			$search_q = $queries['q'];
 			$this->db->group_start();
 			foreach ($this->searchable_fields as $field) {
-				$this->db->or_like("LOWER($field::varchar)", strtolower($search_q));
+				$this->db->or_where("$field::varchar ILIKE '%$search_q%'");
 			}
 			$this->db->group_end();
 		}
@@ -311,7 +311,7 @@ class BHW_ViewModel extends BHW_Hub
 			$search_q = $queries['q'];
 			$this->db->group_start();
 			foreach ($this->searchable_fields as $field) {
-				$this->db->or_like("LOWER($field::varchar)", strtolower($search_q));
+				$this->db->or_where("$field::varchar ILIKE '%$search_q%'");
 			}
 			$this->db->group_end();
 		}

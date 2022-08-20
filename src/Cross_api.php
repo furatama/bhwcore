@@ -73,6 +73,7 @@ class Cross_api {
 				"headers" => $this->headers(),
 				"connect_timeout" => $this->_timeout,
 				"timeout" => $this->_timeout,
+				'allow_redirects'=> ['strict'=> true]
 			]);
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
@@ -91,6 +92,7 @@ class Cross_api {
 				"headers" => $this->headers(),
 				"connect_timeout" => $this->_timeout,
 				"timeout" => $this->_timeout,
+				'allow_redirects'=> ['strict'=> true]
 			]);
 			$body = $response->getBody()->getContents();
 			$body_data = json_decode($body, true);
