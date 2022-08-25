@@ -76,7 +76,7 @@ class BHW_ViewModel extends BHW_Hub
 	{
 		$name =  get_class($this) . "__" . $this->table . "__" . $func . "__" . json_encode($queries);
 		$name = preg_replace('/[^\da-z\.\_]/i', '', $name);
-		return $name;
+		return strlen($name) <= 225 ? $name : substr($name, 0, 225);
 	}
 
 
