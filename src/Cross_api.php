@@ -5,6 +5,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use bhw\BhawanaCore\Cache;
 
 class Cross_api {
 
@@ -45,6 +46,31 @@ class Cross_api {
 			$message = "tak terdefinisi";
 		}
 		return "ERR:$message";
+	}
+	
+
+	public function get_request_cached($uri, $query = []) {
+		try {
+			$key = $uri . "__" . serialize($query);
+			if ($data = Cache::instance($key)->load()) {
+				return $data;
+			}
+			$response = $this->_client->request('GET', $uri, [
+				"query" => $query,
+				"headers" => $this->headers(),
+				"connect_timeout" => $this->_timeout,
+				"timeout" => $this->_timeout,
+			]);
+			$body = $response->getBody();
+			$body_data = json_decode($body, true);
+			Cache::instance($key)->save($body_data);
+			return $body_data;
+		} catch (ClientException $ex) {
+			return $this->_parse_error($ex->getResponse()->getBody());
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+		
 	}
 
 	public function get_request($uri, $query = []) {
