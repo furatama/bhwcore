@@ -31,6 +31,8 @@ class Cache {
     }
 
     public function key($key) {
+		$key = preg_replace('/[^\da-z\.\_]/i', '', $key);
+		$key = strlen($key) <= 225 ? $key : substr($key, 0, 225);
         $this->key = $key;
     }
 
@@ -38,7 +40,7 @@ class Cache {
         if (!static::$_instance)
             static::$_instance = new Cache();
         
-        (static::$_instance)->key = $key;
+        (static::$_instance)->key($key);
         return static::$_instance;
     }
 

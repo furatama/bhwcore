@@ -74,9 +74,7 @@ class BHW_ViewModel extends BHW_Hub
 	
 	public function get_cache_key($func, $queries)
 	{
-		$name =  get_class($this) . "__" . $this->table . "__" . $func . "__" . json_encode($queries);
-		$name = preg_replace('/[^\da-z\.\_]/i', '', $name);
-		return strlen($name) <= 225 ? $name : substr($name, 0, 225);
+		return get_class($this) . "__" . $this->table . "__" . $func . "__" . json_encode($queries);
 	}
 
 
