@@ -12,12 +12,12 @@ class Cache {
     private $duration;
 
     public function __construct() {
-        $ci = &get_instances();
+        $ci = &\get_instance();
 		$ci->load->driver('cache');
-        if ($this->cache->memcached->is_supported()) {
-			$this->cch = $this->cache->memcached;
+        if ($ci->cache->memcached->is_supported()) {
+			$this->cch = $ci->cache->memcached;
 		} else {
-            $this->cch = $this->cache->file;
+            $this->cch = $ci->cache->file;
         }
         $this->duration = defined(CACHE_DURATION) ? CACHE_DURATION : 180;
     }
