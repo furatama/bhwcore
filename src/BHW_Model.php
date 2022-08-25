@@ -143,12 +143,7 @@ class BHW_Model extends BHW_ViewModel {
 
 		$this->db->trans_start();
 		foreach ($this->refresh_materialized_view_list as $mv => $query) {
-			if (!str_starts_with(strtolower($query), "select") && str_word_count($query) == 1)
-				$query = "SELECT * from " . $query;
-			$this->db->insert("utility.materialized_view_refresh_queue", [
-				"mv_name" => $mv,
-				"mv_query" => $query,
-			]);
+			$this->add_to_refresh_materialized_view_queue($mv, $query);
 		}
 		$this->db->trans_complete();
 

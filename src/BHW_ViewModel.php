@@ -3,9 +3,12 @@ namespace bhw\BhawanaCore;
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use bhw\BhawanaCore\Cache;
+
 class BHW_ViewModel extends BHW_Hub
 {
 	public $table; //masukkan value dari table yang dipakai
+	public $materialized_view;
 	public $primary_key; //masukkan value dari primary_key table tersebut
 	public $whereable_fields = '$shown_fields'; //masukkan array dari field yang bisa diisi ke table (abaikan isian otomatis seperti id, created_at, deleted_at)
 	public $shown_fields = []; //masukkan array dari field yang bisa diperlihatkan dari table
@@ -15,6 +18,7 @@ class BHW_ViewModel extends BHW_Hub
 	public $is_hidden_enabled; //aktifkan mode show-hide
 	public $order_dir = 'DESC';
 	public $order_by;
+	public $use_cache = false;
 
 	public function __construct()
 	{
@@ -31,13 +35,53 @@ class BHW_ViewModel extends BHW_Hub
 			$this->whereable_fields = $this->db->list_fields($this->table);
 	}
 
+	public function db_get() {
+		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$db_get = @$this->db->get($this->materialized_view);
+		}
+		if ($db_get === false) {
+			$db_get = @$this->db->get($this->table);
+		}
+		if ($db_get === false) {
+			$this->get_db_error();
+		}
+		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$this->add_to_refresh_materialized_view_queue($this->materialized_view, $this->table);
+		}
+		return $db_get;
+	}
+
+	public function db_get_count() {
+		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$db_get = @$this->db->count_all_results($this->materialized_view);
+		}
+		if ($db_get === false) {
+			$db_get = @$this->db->count_all_results($this->table);
+		}
+		if ($db_get === false) {
+			$this->get_db_error();
+		}
+		return $db_get;
+	}
+	
+	public function get_cache_key($func, $queries)
+	{
+		$name =  get_class($this) . "__" . $this->table . "__" . $func . "__" . json_encode($queries);
+		$name = preg_replace('/[^\da-z\.\_]/i', '', $name);
+		return $name;
+	}
+
+
 	public function read($queries, $select_attributes = [])
 	{
+		if ($this->use_cache)
+			return $this->read_cached($queries, $select_attributes);
+			
 		try {
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -45,14 +89,37 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
+	public function read_cached($queries, $select_attributes = [])
+	{
+		try {
+			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			if ($data = Cache::instance($key)->load()) {
+				return $data;
+			}
+			$this->db->select($this->select_shown());
+			$this->convert_queries_into_where($queries);
+			$this->parse_attributes($select_attributes);
+			$db_get = $this->db_get();
+			$this->get_db_error();
+			$data = $this->_fetch($db_get);
+			Cache::instance($key)->save($data);
+			return $data;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
 	public function read_single($queries, $select_attributes = [])
 	{
+		if ($this->use_cache)
+			return $this->read_cached($queries, $select_attributes);
+
 		try {
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
 			$this->db->limit(1);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			return $this->_fetch_single($db_get);
 		} catch (\Throwable $th) {
@@ -60,12 +127,53 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_count($queries)
+	public function read_single_cached($queries, $select_attributes = [])
 	{
 		try {
+			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			if ($data = Cache::instance($key)->load()) {
+				return $data;
+			}
+			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
-			$db_count = $this->db->count_all_results($this->table);
+			$this->parse_attributes($select_attributes);
+			$this->db->limit(1);
+			$db_get = $this->db_get();
 			$this->get_db_error();
+			$data = $this->_fetch_single($db_get);
+			Cache::instance($key)->save($data);
+			return $data;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
+	public function read_count($queries)
+	{
+		if ($this->use_cache)
+			return $this->read_count_cached($queries);
+
+		try {
+			$this->convert_queries_into_where($queries);
+			$db_count = $this->db_get_count();
+			$this->get_db_error();
+			return $db_count;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
+	public function read_count_cached($queries)
+	{
+		try {
+			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			if ($data = Cache::instance($key)->load()) {
+				return $data;
+			}
+			$this->convert_queries_into_where($queries);
+			$db_count = $this->db_get_count();
+			$this->get_db_error();
+			Cache::instance($key)->save($db_count);
 			return $db_count;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -74,20 +182,58 @@ class BHW_ViewModel extends BHW_Hub
 
 	public function read_page($queries, $select_attributes = [])
 	{
+		if ($this->use_cache)
+			return $this->read_page_cached($queries, $select_attributes);
+
 		try {
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where_page_count($queries);
 			$this->parse_attributes($select_attributes);
-			$db_count = $this->db->count_all_results($this->table);
+			$db_count = $this->db_get_count();
 			$this->get_db_error();
 
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where_page($queries);
 			$this->parse_attributes($select_attributes);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			return [
 				"data" => $this->_fetch($db_get),
+				"data_count" => $db_count,
+				"total_page" => ceil($db_count / $queries['per_page'])
+			];
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
+	public function read_page_cached($queries, $select_attributes = [])
+	{
+		try {
+			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			$key_cnt = $key . "_cnt";
+
+			if (!$db_count = Cache::instance($key_cnt)->load()) {
+				$this->db->select($this->select_shown());
+				$this->convert_queries_into_where_page_count($queries);
+				$this->parse_attributes($select_attributes);
+				$db_count = $this->db_get_count();
+				$this->get_db_error();
+				Cache::instance($key_cnt)->save($db_count);
+			}
+
+			if (!$db_data = Cache::instance($key)->load()) {
+				$this->db->select($this->select_shown());
+				$this->convert_queries_into_where_page($queries);
+				$this->parse_attributes($select_attributes);
+				$db_get = $this->db_get();
+				$this->get_db_error();
+				$db_data = $this->_fetch($db_get);
+				Cache::instance($key)->save($db_count);
+			}
+
+			return [
+				"data" => $db_data,
 				"data_count" => $db_count,
 				"total_page" => ceil($db_count / $queries['per_page'])
 			];
@@ -128,7 +274,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($where);
 			$this->parse_attributes($opts);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -138,10 +284,13 @@ class BHW_ViewModel extends BHW_Hub
 
 	public function read_pluck($field, $queries = [], $mutator = null)
 	{
+		if ($this->use_cache)
+			return $this->read_pluck_cached($field, $queries = [], $mutator = null);
+
 		try {
 			$this->db->select($this->select_shown());
 			$this->convert_queries_into_where($queries);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			$data = [];
 			if (is_array($field)) {
@@ -165,6 +314,40 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
+	public function read_pluck_cached($field, $queries = [], $mutator = null)
+	{
+		try {
+			$key = $this->get_cache_key(__FUNCTION__ . "_" . $field, $queries);
+			if ($data = Cache::instance($key)->load()) {
+				return $data;
+			}
+			$this->db->select($this->select_shown());
+			$this->convert_queries_into_where($queries);
+			$db_get = $this->db_get();
+			$this->get_db_error();
+			$data = [];
+			if (is_array($field)) {
+				$field2 = array_key_first($field);
+				$field = $field[$field2];
+			}
+			while ($row = $db_get->unbuffered_row('array')) {
+				if (!isset($field2)) {
+					if (!in_array($row[$field], $data)) {
+						$data[] = $mutator && is_callable($mutator) ? $mutator($row[$field]) : $row[$field];
+					}
+				} else {
+					$rf2 = $row[$field2];
+					$d = $mutator && is_callable($mutator) ? $mutator($row[$field], $rf2) : $row[$field];
+					$data[$rf2] = $d;
+				}
+			}
+			Cache::instance($key)->save($data);
+			return $data;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
 	public function read_cursor($queries, $select_attributes = [])
 	{
 		try {
@@ -172,7 +355,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->select($col);
 			$this->convert_queries_into_where($queries);
 			$this->parse_attributes($select_attributes);
-			$db_get = $this->db->get($this->table);
+			$db_get = $this->db_get();
 			$this->get_db_error();
 			return $db_get;
 		} catch (\Throwable $th) {
@@ -385,5 +568,15 @@ class BHW_ViewModel extends BHW_Hub
 		if (!empty($data))
 			return $data[0];
 		return [];
+	}
+
+	public function add_to_refresh_materialized_view_queue($mv, $query) {
+		if (!str_starts_with(strtolower($query), "select") && str_word_count($query) == 1)
+			$query = "SELECT * from " . $query;
+
+		$this->db->insert("utility.materialized_view_refresh_queue", [
+			"mv_name" => $mv,
+			"mv_query" => $query,
+		]);
 	}
 }
