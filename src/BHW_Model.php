@@ -137,7 +137,7 @@ class BHW_Model extends BHW_ViewModel {
 
 	public $refresh_materialized_view_list = [];
 	public function refresh_materialized_view() {
-		if (count($this->refresh_materialized_view) == 0) {
+		if (count($this->refresh_materialized_view_list) == 0) {
 			return;
 		}
 

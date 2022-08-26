@@ -34,6 +34,9 @@ class BHW_ViewModel extends BHW_Hub
 		elseif (empty($this->whereable_fields))
 			$this->whereable_fields = $this->db->list_fields($this->table);
 
+		if ($this->materialized_view === true) {
+			$this->materialized_view = $this->table . "_materialized";
+		}
 		
 	}
 
