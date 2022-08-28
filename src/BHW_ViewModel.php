@@ -625,13 +625,14 @@ class BHW_ViewModel extends BHW_Hub
 		return $str;
 	}
 
-	public function add_to_refresh_materialized_view_queue($mv, $query) {
+	public function add_to_refresh_materialized_view_queue($mv, $query, $in = 60) {
 		if (!str_starts_with(strtolower($query), "select") && substr_count(trim($query), ' ') == 0)
 			$query = "SELECT * from " . $this->add_schema_to_materialized_view($query);
 
 		$this->db->insert("utility.materialized_view_refresh_queue", [
 			"mv_name" => $this->add_schema_to_materialized_view($mv),
 			"mv_query" => $query,
+			"refreshes_in" => $in,
 		]);
 	}
 }
