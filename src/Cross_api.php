@@ -49,7 +49,7 @@ class Cross_api {
 	}
 	
 
-	public function get_request_cached($uri, $query = []) {
+	public function get_request_cached($uri, $query = [], $duration = null) {
 		try {
 			$key = $uri . "__" . serialize($query);
 			if ($data = Cache::instance($key)->load()) {
@@ -63,7 +63,7 @@ class Cross_api {
 			]);
 			$body = $response->getBody();
 			$body_data = json_decode($body, true);
-			Cache::instance($key)->save($body_data);
+			Cache::instance($key)->save($body_data, $duration);
 			return $body_data;
 		} catch (ClientException $ex) {
 			return $this->_parse_error($ex->getResponse()->getBody());
