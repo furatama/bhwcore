@@ -23,10 +23,12 @@ class Cache {
     }
 
     public function load() {
+		bh_log(['LOAD CACHE', $this->key, $this->cache->memcached->is_supported()]);
         return $this->cch->get($this->key);
     }
 
     public function save($value) {
+		bh_log(['SAVE CACHE', $this->key, $this->cache->memcached->is_supported()]);
         return $this->cch->save($this->key, $value, $this->duration);
     }
 

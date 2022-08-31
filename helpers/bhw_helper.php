@@ -112,3 +112,15 @@ if (!function_exists('bh_log')) {
 		fclose($file);
     }
 }
+
+if (!function_exists('bh_cache_load')) {
+    function bh_cache_load($key) {
+        return \bhw\BhawanaCore\Cache::instance($key)->load();
+    }
+}
+
+if (!function_exists('bh_cache_save')) {
+    function bh_cache_save($key, $data, $dur = null) {
+        return \bhw\BhawanaCore\Cache::instance($key)->save($data, $dur);
+    }
+}

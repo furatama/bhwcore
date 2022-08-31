@@ -19,6 +19,7 @@ class BHW_ViewModel extends BHW_Hub
 	public $order_dir = 'DESC';
 	public $order_by;
 	public $use_cache = false;
+	public $materialized_view_refresh_duration = 60;
 
 	public function __construct()
 	{
@@ -101,10 +102,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_cached($queries, $select_attributes = [])
+	public function read_cached($queries, $select_attributes = [], $cache_config = null)
 	{
 		try {
-			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			$key = $cache_config['key'] ?? $this->get_cache_key(__FUNCTION__, $queries);
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
@@ -117,7 +118,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->flush_cache();
 			$this->get_db_error();
 			$data = $this->_fetch($db_get);
-			Cache::instance($key)->save($data);
+			Cache::instance($key)->save($data, $cache_config['duration'] ?? null);
 			return $data;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -145,10 +146,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_single_cached($queries, $select_attributes = [])
+	public function read_single_cached($queries, $select_attributes = [], $cache_config = null)
 	{
 		try {
-			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			$key = $cache_config['key'] ?? $this->get_cache_key(__FUNCTION__, $queries);
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
@@ -162,7 +163,7 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db->flush_cache();
 			$this->get_db_error();
 			$data = $this->_fetch_single($db_get);
-			Cache::instance($key)->save($data);
+			Cache::instance($key)->save($data, $cache_config['duration'] ?? null);
 			return $data;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -187,10 +188,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_count_cached($queries)
+	public function read_count_cached($queries, $cache_config = null)
 	{
 		try {
-			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			$key = $cache_config['key'] ?? $this->get_cache_key(__FUNCTION__, $queries);
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
@@ -200,7 +201,7 @@ class BHW_ViewModel extends BHW_Hub
 			$db_count = $this->db_get_count();
 			$this->db->flush_cache();
 			$this->get_db_error();
-			Cache::instance($key)->save($db_count);
+			Cache::instance($key)->save($db_count, $cache_config['duration'] ?? null);
 			return $db_count;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -240,10 +241,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_page_cached($queries, $select_attributes = [])
+	public function read_page_cached($queries, $select_attributes = [], $cache_config = null)
 	{
 		try {
-			$key = $this->get_cache_key(__FUNCTION__, $queries);
+			$key = $cache_config['key'] ?? $this->get_cache_key(__FUNCTION__, $queries);
 			$key_cnt = $key . "_cnt";
 
 			if (!$db_count = Cache::instance($key_cnt)->load()) {
@@ -268,7 +269,7 @@ class BHW_ViewModel extends BHW_Hub
 				$this->db->flush_cache();
 				$this->get_db_error();
 				$db_data = $this->_fetch($db_get);
-				Cache::instance($key)->save($db_data);
+				Cache::instance($key)->save($db_data, $cache_config['duration'] ?? null);
 			}
 
 			return [
@@ -356,10 +357,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function read_pluck_cached($field, $queries = [], $mutator = null)
+	public function read_pluck_cached($field, $queries = [], $mutator = null, $cache_config = null)
 	{
 		try {
-			$key = $this->get_cache_key(__FUNCTION__ . "_" . $field, $queries);
+			$key = $cache_config['key'] ?? $this->get_cache_key(__FUNCTION__, $queries);
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
@@ -386,7 +387,7 @@ class BHW_ViewModel extends BHW_Hub
 					$data[$rf2] = $d;
 				}
 			}
-			Cache::instance($key)->save($data);
+			Cache::instance($key)->save($data, $cache_config['duration'] ?? null);
 			return $data;
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -519,7 +520,7 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page
 	public function convert_queries_into_where_page(&$queries)
 	{
-		if (isset($queries['q']) && !empty($this->searchable_fields)) {
+		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
 			$search_q = $queries['q'];
 			$this->db->group_start();
 			foreach ($this->searchable_fields as $field) {
@@ -538,7 +539,7 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page (untuk counting)
 	public function convert_queries_into_where_page_count(&$queries)
 	{
-		if (isset($queries['q']) && !empty($this->searchable_fields)) {
+		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
 			$search_q = $queries['q'];
 			$this->db->group_start();
 			foreach ($this->searchable_fields as $field) {
@@ -625,14 +626,39 @@ class BHW_ViewModel extends BHW_Hub
 		return $str;
 	}
 
-	public function add_to_refresh_materialized_view_queue($mv, $query, $in = 60) {
+	public function add_to_refresh_materialized_view_queue($mv, $query, $in = null) {
 		if (!str_starts_with(strtolower($query), "select") && substr_count(trim($query), ' ') == 0)
 			$query = "SELECT * from " . $this->add_schema_to_materialized_view($query);
 
 		$this->db->insert("utility.materialized_view_refresh_queue", [
 			"mv_name" => $this->add_schema_to_materialized_view($mv),
 			"mv_query" => $query,
-			"refreshes_in" => $in,
+			"refreshes_in" => $in ?? $this->materialized_view_refresh_duration ?? 30,
 		]);
 	}
+
+	public function read_notification_count($queries, $key, $refresh = false) {
+		if (!$refresh)
+			return $this->read_count_cached($queries, [
+				'key' => $key,
+				'duration' => 300
+			]);
+
+		try {
+			$key = $key ?? $this->get_cache_key('read_count_cached', $queries);
+			$this->db->start_cache();
+			$this->convert_queries_into_where($queries);
+			$this->db->stop_cache();
+			$db_count = $this->db_get_count();
+			$this->db->flush_cache();
+			$this->get_db_error();
+			Cache::instance($key)->save($db_count, 300);
+			return $db_count;
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+
+	}
+
+
 }
