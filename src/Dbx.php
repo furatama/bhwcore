@@ -14,6 +14,8 @@ class Dbx { //sync-query
 	private $rollback_list = [];
 	private $rollback_mode = false;
 
+	public $rollback_bullshit = false;
+
 	public function __construct()
 	{
 		$this->CI = &get_instance();
@@ -45,7 +47,7 @@ class Dbx { //sync-query
 		$CI = $this->CI;
 		for ($i=$this->query_trial; $i > 0; $i--) { 
 			// $CI->db->reset_query();
-			$CI->db->insert($table, $data);
+			@$CI->db->insert($table, $data);
 			$db_error = $this->_get_db_error();
 			if ($db_error === FALSE) {
 				break;
@@ -71,7 +73,7 @@ class Dbx { //sync-query
 	public function insert_batch($table, $data, $where) {
 		$CI = $this->CI;
 		for ($i=$this->query_trial; $i > 0; $i--) { 
-			$CI->db->insert_batch($table, $data);
+			@$CI->db->insert_batch($table, $data);
 			$db_error = $this->_get_db_error();
 			if ($db_error === FALSE) {
 				break;
@@ -83,7 +85,7 @@ class Dbx { //sync-query
 				"table" => $table,
 				"where" => $where,
 			]);
-			return ['ok' => $CI->db->affected_rows()];
+			return ['ok' => @$CI->db->affected_rows()];
 		} else {
 			return ['error' => $db_error];
 		}
@@ -92,7 +94,7 @@ class Dbx { //sync-query
 	public function update_single($table, $data, $where) {
 		$CI = $this->CI;
 
-		if ($this->rollback_mode === FALSE) {
+		if ($this->rollback_mode === FALSE && $this->rollback_bullshit) {
 			$CI->db->reset_query();
 			$this->_queries_to_where($where);
 			$prev_data = $CI->db->get($table)->row_array();
@@ -101,7 +103,7 @@ class Dbx { //sync-query
 		for ($i = $this->query_trial; $i > 0; $i--) { 
 			// $CI->db->reset_query();
 			$this->_queries_to_where($where);
-			$CI->db->update($table, $data);
+			@$CI->db->update($table, $data);
 			$db_error = $this->_get_db_error();
 			if ($db_error === FALSE) {
 				break;
@@ -114,7 +116,7 @@ class Dbx { //sync-query
 				"data" => $prev_data ?? [],
 				"where" => $data,
 			]);
-			return ['ok' => $CI->db->affected_rows()];
+			return ['ok' => @$CI->db->affected_rows()];
 		} else {
 			return ['error' => $db_error];
 		}
@@ -123,7 +125,7 @@ class Dbx { //sync-query
 	public function delete($table, $where) {
 		$CI = $this->CI;
 
-		if ($this->rollback_mode === FALSE) {
+		if ($this->rollback_mode === FALSE && $this->rollback_bullshit) {
 			$CI->db->reset_query();
 			$this->_queries_to_where($where);
 			$prev_data = $CI->db->get($table)->result_array();
@@ -180,17 +182,11 @@ class Dbx { //sync-query
 	}
 
 	private function _add_to_rollback($data) {
+		if (!$this->rollback_bullshit)
+			return;
 		if ($this->rollback_mode)
 			return;
 		$this->rollback_list[] = $data;
-	}
-
-	private function _get_db_error() {
-		$db_error = $this->CI->db->error();
-		if (!empty($db_error) && $db_error['code'] > 0) {
-			return $db_error;
-		}
-		return false;
 	}
 	
 	//Mengconvert query string menjadi klausa where
@@ -257,6 +253,47 @@ class Dbx { //sync-query
 			$params[$key] = $this->CI->db->escape($value);
 		}
 		return $this->CI->db->query($query, $params);
+	}
+
+	private function _get_db_error() {
+		$db_error = $this->CI->db->error();
+		if (!empty($db_error) && isset($db_error['message']) && !empty($db_error['message'])) {
+			$msg = $db_error['message'];
+			if (strpos($msg, 'duplicate') !== false) {
+				$detail = strpos($msg, 'DETAIL');
+				if ($detail != FALSE) {
+					preg_match_all('~\(([^()]*)\)~', $msg, $matches);
+					$key = str_replace(['-', '_'], ' ', $matches[1][0] ?? '');
+					$value = $matches[1][1] ?? '';
+					$db_error['n_message'] = "data dengan {$key} \"{$value}\" sudah ada";
+				} else {
+					$db_error['n_message'] = "data ini sudah ada";
+				}
+			} else if (strpos($msg, 'violates not-null constraint')) {
+				$detail = strpos($msg, 'DETAIL');
+				if ($detail != FALSE) {
+					preg_match_all('/(\\")([^(\\")]+)(\\")/', $msg, $matches);
+					$key = str_replace(['-', '_'], ' ', $matches[2][0] ?? '');
+					$db_error['n_message'] = "nilai {$key} tidak boleh kosong";
+				} else {
+					$db_error['n_message'] = "ada nilai yang masih kosong";
+				}
+			} else if (strpos($msg, 'violates foreign key constraint')) {
+				$detail = strpos($msg, 'DETAIL');
+				if ($detail != FALSE) {
+					preg_match_all('/(\\")([^(\\")]+)(\\")/', $msg, $matches);
+					$key = str_replace(['-', '_'], ' ', $matches[2][0] ?? '');
+					$value = str_replace(['-', '_'], ' ', $matches[2][2] ?? '');
+					$db_error['n_message'] = "data {$key} ini masih dipakai di modul lain [{$value}]";
+				} else {
+					$db_error['n_message'] = "data ini masih dipakai di modul lain";
+				}
+			} else {
+				$db_error['n_message'] = $msg;
+			}
+			throw new \Exception($db_error['n_message']);
+		}
+		return false;
 	}
 
 
