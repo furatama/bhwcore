@@ -41,30 +41,47 @@ class BHW_ViewModel extends BHW_Hub
 		
 	}
 
-	public function db_get() {
+	public function db_conditioning($conditions) {
+		foreach ($conditions as $c) {
+			if (is_callable($c)) {
+				$c();
+			}
+		}
+	}
+
+	public function db_get($conditions) {
+		$in = null;
 		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$this->db_conditioning($conditions);
 			$db_get = @$this->db->get($this->materialized_view);
+			if (!$db_get) {
+				$in = 1;
+				$this->drop_materialized_view($this->materialized_view);
+			}
 		}
 		if (!isset($db_get) || $db_get === false) {
+			$this->db_conditioning($conditions);
 			$db_get = @$this->db->get($this->table);
 		}
 		if ($db_get === false) {
 			$this->get_db_error();
 		}
 		if ($this->materialized_view && is_string($this->materialized_view)) {
-			$this->add_to_refresh_materialized_view_queue($this->materialized_view, $this->table);
+			$this->add_to_refresh_materialized_view_queue($this->materialized_view, $this->table, $in);
 		}
 		return $db_get;
 	}
 
-	public function db_get_count() {
+	public function db_get_count($conditions) {
 		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$this->db_conditioning($conditions);
 			$db_get = @$this->db->get($this->materialized_view);
 			if ($db_get) {
 				$db_get = $db_get->num_rows();
 			}
 		}
 		if (!isset($db_get) || $db_get === false) {
+			$this->db_conditioning($conditions);
 			$db_get = @$this->db->get($this->table);
 			if ($db_get) {
 				$db_get = $db_get->num_rows();
@@ -88,13 +105,11 @@ class BHW_ViewModel extends BHW_Hub
 			return $this->read_cached($queries, $select_attributes);
 			
 		try {
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+				fn() => $this->parse_attributes($select_attributes)
+			]);
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -109,13 +124,11 @@ class BHW_ViewModel extends BHW_Hub
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+				fn() => $this->parse_attributes($select_attributes)
+			]);
 			$this->get_db_error();
 			$data = $this->_fetch($db_get);
 			Cache::instance($key)->save($data, $cache_config['duration'] ?? null);
@@ -131,14 +144,12 @@ class BHW_ViewModel extends BHW_Hub
 			return $this->read_cached($queries, $select_attributes);
 
 		try {
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->limit(1);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+				fn() => $this->parse_attributes($select_attributes),
+				fn() => $this->db->limit(1),
+			]);
 			$this->get_db_error();
 			return $this->_fetch_single($db_get);
 		} catch (\Throwable $th) {
@@ -153,14 +164,12 @@ class BHW_ViewModel extends BHW_Hub
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->limit(1);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+				fn() => $this->parse_attributes($select_attributes),
+				fn() => $this->db->limit(1),
+			]);
 			$this->get_db_error();
 			$data = $this->_fetch_single($db_get);
 			Cache::instance($key)->save($data, $cache_config['duration'] ?? null);
@@ -176,11 +185,9 @@ class BHW_ViewModel extends BHW_Hub
 			return $this->read_count_cached($queries);
 
 		try {
-			$this->db->start_cache();
-			$this->convert_queries_into_where($queries);
-			$this->db->stop_cache();
-			$db_count = $this->db_get_count();
-			$this->db->flush_cache();
+			$db_count = $this->db_get_count([
+				fn() => $this->convert_queries_into_where($queries)
+			]);
 			$this->get_db_error();
 			return $db_count;
 		} catch (\Throwable $th) {
@@ -195,11 +202,9 @@ class BHW_ViewModel extends BHW_Hub
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
-			$this->db->start_cache();
-			$this->convert_queries_into_where($queries);
-			$this->db->stop_cache();
-			$db_count = $this->db_get_count();
-			$this->db->flush_cache();
+			$db_count = $this->db_get_count([
+				fn() => $this->convert_queries_into_where($queries)
+			]);
 			$this->get_db_error();
 			Cache::instance($key)->save($db_count, $cache_config['duration'] ?? null);
 			return $db_count;
@@ -214,22 +219,18 @@ class BHW_ViewModel extends BHW_Hub
 			return $this->read_page_cached($queries, $select_attributes);
 
 		try {
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where_page_count($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->stop_cache();
-			$db_count = $this->db_get_count();
-			$this->db->flush_cache();
+			$db_count = $this->db_get_count([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where_page_count($queries),
+				fn() => $this->parse_attributes($select_attributes),
+			]);
 			$this->get_db_error();
 
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where_page($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where_page($queries),
+				fn() => $this->parse_attributes($select_attributes),
+			]);
 			$this->get_db_error();
 			return [
 				"data" => $this->_fetch($db_get),
@@ -248,25 +249,21 @@ class BHW_ViewModel extends BHW_Hub
 			$key_cnt = $key . "_cnt";
 
 			if (!$db_count = Cache::instance($key_cnt)->load()) {
-				$this->db->start_cache();
-				$this->db->select($this->select_shown());
-				$this->convert_queries_into_where_page_count($queries);
-				$this->parse_attributes($select_attributes);
-				$this->db->stop_cache();
-				$db_count = $this->db_get_count();
-				$this->db->flush_cache();
+				$db_count = $this->db_get_count([
+					fn() => $this->db->select($this->select_shown()),
+					fn() => $this->convert_queries_into_where_page_count($queries),
+					fn() => $this->parse_attributes($select_attributes),
+				]);
 				$this->get_db_error();
 				Cache::instance($key_cnt)->save($db_count);
 			}
 
 			if (!$db_data = Cache::instance($key)->load()) {
-				$this->db->start_cache();
-				$this->db->select($this->select_shown());
-				$this->convert_queries_into_where_page($queries);
-				$this->parse_attributes($select_attributes);
-				$this->db->stop_cache();
-				$db_get = $this->db_get();
-				$this->db->flush_cache();
+				$db_get = $this->db_get([
+					fn() => $this->db->select($this->select_shown()),
+					fn() => $this->convert_queries_into_where_page($queries),
+					fn() => $this->parse_attributes($select_attributes),
+				]);
 				$this->get_db_error();
 				$db_data = $this->_fetch($db_get);
 				Cache::instance($key)->save($db_data, $cache_config['duration'] ?? null);
@@ -311,10 +308,11 @@ class BHW_ViewModel extends BHW_Hub
 	{
 		try {
 			$this->shown_fields = $select;
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($where);
-			$this->parse_attributes($opts);
-			$db_get = $this->db_get();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($where),
+				fn() => $this->parse_attributes($opts),
+			]);
 			$this->get_db_error();
 			return $this->_fetch($db_get);
 		} catch (\Throwable $th) {
@@ -328,12 +326,10 @@ class BHW_ViewModel extends BHW_Hub
 			return $this->read_pluck_cached($field, $queries = [], $mutator = null);
 
 		try {
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+			]);
 			$this->get_db_error();
 			$data = [];
 			if (is_array($field)) {
@@ -364,12 +360,10 @@ class BHW_ViewModel extends BHW_Hub
 			if ($data = Cache::instance($key)->load()) {
 				return $data;
 			}
-			$this->db->start_cache();
-			$this->db->select($this->select_shown());
-			$this->convert_queries_into_where($queries);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where($queries),
+			]);
 			$this->get_db_error();
 			$data = [];
 			if (is_array($field)) {
@@ -397,14 +391,12 @@ class BHW_ViewModel extends BHW_Hub
 	public function read_cursor($queries, $select_attributes = [])
 	{
 		try {
-			$this->db->start_cache();
 			$col = $this->retrieve_shown();
-			$this->db->select($col);
-			$this->convert_queries_into_where($queries);
-			$this->parse_attributes($select_attributes);
-			$this->db->stop_cache();
-			$db_get = $this->db_get();
-			$this->db->flush_cache();
+			$db_get = $this->db_get([
+				fn() => $this->db->select($col),
+				fn() => $this->convert_queries_into_where($queries),
+				fn() => $this->parse_attributes($select_attributes),
+			]);
 			$this->get_db_error();
 			return $db_get;
 		} catch (\Throwable $th) {
@@ -626,6 +618,12 @@ class BHW_ViewModel extends BHW_Hub
 		return $str;
 	}
 
+	public function drop_materialized_view($mv, $in = null) {
+		$query = "drop materialized view if exists " . $this->add_schema_to_materialized_view($mv);
+
+		$this->db->query($query);
+	}
+
 	public function add_to_refresh_materialized_view_queue($mv, $query, $in = null) {
 		if (!str_starts_with(strtolower($query), "select") && substr_count(trim($query), ' ') == 0)
 			$query = "SELECT * from " . $this->add_schema_to_materialized_view($query);
@@ -646,11 +644,9 @@ class BHW_ViewModel extends BHW_Hub
 
 		try {
 			$key = $key ?? $this->get_cache_key('read_count_cached', $queries);
-			$this->db->start_cache();
-			$this->convert_queries_into_where($queries);
-			$this->db->stop_cache();
-			$db_count = $this->db_get_count();
-			$this->db->flush_cache();
+			$db_count = $this->db_get_count([
+				fn() => $this->convert_queries_into_where($queries)
+			]);
 			$this->get_db_error();
 			Cache::instance($key)->save($db_count, 300);
 			return $db_count;
