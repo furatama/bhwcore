@@ -100,8 +100,11 @@ if (!function_exists('bh_hak_akses_cek')) {
 }
 
 if (!function_exists('bh_log')) {
-    function bh_log(array $data)
+    function bh_log($data)
     {
+        if (!is_array($data)) {
+            $data = [$data];
+        }
         $date = date('Y-m-d H:i:s');
         $dateonly = date('Y_m_d');
 		$ip = $_SERVER['REMOTE_ADDR'];
