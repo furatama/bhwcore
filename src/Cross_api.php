@@ -21,7 +21,9 @@ class Cross_api {
 			'base_uri' => $this->uri,
 			'verify' => false
 		]);
-		$key = COMPANY . $this->modul . "JWTKEY" . JWT_SALT;
+		$company = defined('COMPANY') ? COMPANY : 'BHAWANA';
+		$salt = defined('JWT_SALT') ? JWT_SALT : 'bhawanaerp';
+		$key = $company . $this->modul . "JWTKEY" . $salt;
 		$jwt = new Jwt_auth($key);
 		$this->_token = $jwt->get_token([
 			"from" => $this->modul,

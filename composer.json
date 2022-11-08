@@ -16,7 +16,6 @@
     "autoload": {
         "psr-4": {"bhw\\BhawanaCore\\": "src/"},
         "files": [
-            "index.php",
             "helpers/bhw_file_helper.php",
             "helpers/bhw_helper.php"
         ]

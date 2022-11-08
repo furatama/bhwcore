@@ -21,7 +21,7 @@ class Cache {
 		} else {
             $this->cch = $ci->cache->file;
         }
-        $this->duration = defined(CACHE_DURATION) ? CACHE_DURATION : 60;
+        $this->duration = defined('CACHE_DURATION') ? CACHE_DURATION : 60;
     }
 
     public function load() {

@@ -11,7 +11,10 @@ class Jwt_auth {
 
 	public function __construct($key = null)
 	{
-		$key = $key !== null ? $key : (COMPANY . MODUL . "JWTKEY" . JWT_SALT);
+		$company = defined('COMPANY') ? COMPANY : 'BHAWANA';
+		$modul = defined('MODUL') ? MODUL : 'MODUL';
+		$salt = defined('JWT_SALT') ? JWT_SALT : 'bhawanaerp';
+		$key = $key !== null ? $key : ($company . $modul . "JWTKEY" . $salt);
 		$this->jwt_key = hash("sha256", $key);
 	}
 
