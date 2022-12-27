@@ -402,4 +402,21 @@ class BHW_Controller extends RestController
 			], BHW_Controller::HTTP_UNAUTHORIZED);
 		}
 	}
+
+	public function rate_limit_start($key, $dur = 2) {
+		$limited = bh_cache_load($key);
+		if ($limited && $limited != 0) {
+			return $this->response([
+				'status' => false,
+				'message' => 'Input dibatasi',
+			], 500);
+		}
+
+		bh_cache_save($key, 1, $dur); //cooldown selama $dur
+		return true;
+	}
+
+	public function rate_limit_complete($key) {
+		bh_cache_save($key, 0, 1);
+	}
 }

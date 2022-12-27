@@ -29,9 +29,9 @@ class Cache {
         return $this->cch->get($this->key);
     }
 
-    public function save($value) {
+    public function save($value, $dur = null) {
 		bh_log(['SAVE CACHE', $this->key, $this->ci->cache->memcached->is_supported()]);
-        return $this->cch->save($this->key, $value, $this->duration);
+        return $this->cch->save($this->key, $value, $dur ?? $this->duration);
     }
 
     public function key($key) {
