@@ -22,6 +22,9 @@ if (!function_exists('bh_generate_nomor_surat2')) {
     function bh_generate_nomor_surat2($table, $nomor_fld, $tanggal, $tanggal_fld, $extra, $left_pad = 4)
     {
         $CI = &get_instance();
+	$nomor_new = @$CI->db->query("SELECT utility.generate_nomor_surat2('$tanggal', '$table', '$tanggal_fld', '$nomor_fld', '$left_pad', '$extra')")->row()->generate_nomor_surat2
+	if ($nomor_new != false)
+		return $nomor_new;
         return $CI->db->query("SELECT generate_nomor_surat2('$tanggal', '$table', '$tanggal_fld', '$nomor_fld', '$left_pad', '$extra')")->row()->generate_nomor_surat2;
     }
 }
