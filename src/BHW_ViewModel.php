@@ -559,6 +559,10 @@ class BHW_ViewModel extends BHW_Hub
 		if ((isset($atrs['is_hidden']) && $atrs['is_hidden'] === FALSE) || ($this->is_hidden_enabled === TRUE && !isset($atrs['is_hidden']))) {
 			$this->db->where('is_hidden =', FALSE);
 		}
+		
+		if ((isset($this->skip_order) && $this->skip_order === TRUE && !isset($atrs['order_by']) && !isset($atrs['order_dir'])) || (isset($atrs['skip_order']) && $atrs['skip_order'] === TRUE)) {
+		   return;
+		}
 
 		$this->order_by = $this->order_by ?? $this->primary_key;
 		$order_by = isset($atrs['order_by']) ? $atrs['order_by'] : $this->order_by;
