@@ -344,7 +344,7 @@ class BHW_ViewModel extends BHW_Hub
 				"data" => $db_data,
 				"data_count" => $db_count,
 				"total_page" => ceil($db_count / $queries['per_page']),
-				"query" => $query
+				"query" => $query ?? 'LOADED CACHE FROM ' . $key
 			];
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
