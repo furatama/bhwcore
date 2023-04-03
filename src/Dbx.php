@@ -284,9 +284,9 @@ class Dbx { //sync-query
 					preg_match_all('/(\\")([^(\\")]+)(\\")/', $msg, $matches);
 					$key = str_replace(['-', '_'], ' ', $matches[2][0] ?? '');
 					$value = str_replace(['-', '_'], ' ', $matches[2][2] ?? '');
-					$db_error['n_message'] = "data {$key} ini masih dipakai di modul lain [{$value}]";
+					$db_error['n_message'] = "ada masalah terkait foreign key, {$key} terhadap fk {$value} (data masih dipakai source/data foreign tidak ada)";
 				} else {
-					$db_error['n_message'] = "data ini masih dipakai di modul lain";
+					$db_error['n_message'] = "terdapat masalah terkait foreign key (data masih dipakai source/data foreign tidak ada)";
 				}
 			} else {
 				$db_error['n_message'] = $msg;
