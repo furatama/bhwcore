@@ -65,6 +65,10 @@ class BHW_ViewModel extends BHW_Hub
 		}
 		if ($db_get === false) {
 			$this->get_db_error();
+			//direget lagi tanpa @ supaya errornya keluar
+			$this->db_conditioning($conditions);
+			$db_get = $this->db->get($this->table);
+			$this->get_db_error();
 		}
 		if ($this->materialized_view && is_string($this->materialized_view)) {
 			$this->add_to_refresh_materialized_view_queue($this->materialized_view, $this->table, $in);
@@ -89,8 +93,39 @@ class BHW_ViewModel extends BHW_Hub
 		}
 		if ($db_get === false) {
 			$this->get_db_error();
+			//direget lagi tanpa @ supaya errornya keluar
+			$this->db_conditioning($conditions);
+			$db_get = $this->db->get($this->table);
+			$this->get_db_error();
 		}
 		return $db_get;
+	}
+
+	public function db_get_w_count($conditions) {
+		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$this->db_conditioning($conditions);
+			$db_get = @$this->db->get($this->materialized_view);
+			if ($db_get) {
+				$db_count = $db_get->num_rows();
+			}
+		}
+		if (!isset($db_get) || $db_get === false) {
+			$this->db_conditioning($conditions);
+			$db_get = @$this->db->get($this->table);
+			if ($db_get) {
+				$db_count = $db_get->num_rows();
+			}
+		}
+		if ($db_get === false) {
+			$this->get_db_error();
+			$this->db_conditioning($conditions);
+			$db_get = $this->db->get($this->table);
+			$this->get_db_error();
+		}
+		return [
+			'count' => $db_count,
+			'cursor' => $db_get
+		];
 	}
 	
 	public function get_cache_key($func, $queries)
@@ -225,6 +260,7 @@ class BHW_ViewModel extends BHW_Hub
 				fn() => $this->parse_attributes($select_attributes),
 			]);
 			$this->get_db_error();
+			$query[] = $this->db->last_query();
 
 			$db_get = $this->db_get([
 				fn() => $this->db->select($this->select_shown()),
@@ -232,10 +268,43 @@ class BHW_ViewModel extends BHW_Hub
 				fn() => $this->parse_attributes($select_attributes),
 			]);
 			$this->get_db_error();
+			$query[] = $this->db->last_query();
 			return [
 				"data" => $this->_fetch($db_get),
 				"data_count" => $db_count,
-				"total_page" => ceil($db_count / $queries['per_page'])
+				"total_page" => ceil($db_count / $queries['per_page']),
+				"query" => $query
+			];
+		} catch (\Throwable $th) {
+			return "ERR:{$th->getMessage()}";
+		}
+	}
+
+	public function read_page2($queries, $select_attributes = [])
+	{
+		if ($this->use_cache)
+			return $this->read_page_cached($queries, $select_attributes);
+
+		try {
+			$get = $this->db_get_w_count([
+				fn() => $this->db->select($this->select_shown()),
+				fn() => $this->convert_queries_into_where_page_count($queries),
+				fn() => $this->parse_attributes($select_attributes),
+			]);
+			$this->get_db_error();
+			$query[] = $this->db->last_query();
+
+			$db_get = $get['cursor'];
+			$db_count = $get['count'];
+
+			$per_page = $queries['per_page'] ?? $this->per_page ?? 10;
+			$page = $queries['page'] ?? 1;
+
+			return [
+				"data" => $this->_fetch_paginated($db_get, $page, $per_page),
+				"data_count" => $db_count,
+				"total_page" => ceil($db_count / $per_page),
+				"query" => $query
 			];
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -255,6 +324,7 @@ class BHW_ViewModel extends BHW_Hub
 					fn() => $this->parse_attributes($select_attributes),
 				]);
 				$this->get_db_error();
+				$query[] = $this->db->last_query();
 				Cache::instance($key_cnt)->save($db_count);
 			}
 
@@ -266,13 +336,15 @@ class BHW_ViewModel extends BHW_Hub
 				]);
 				$this->get_db_error();
 				$db_data = $this->_fetch($db_get);
+				$query[] = $this->db->last_query();
 				Cache::instance($key)->save($db_data, $cache_config['duration'] ?? null);
 			}
 
 			return [
 				"data" => $db_data,
 				"data_count" => $db_count,
-				"total_page" => ceil($db_count / $queries['per_page'])
+				"total_page" => ceil($db_count / $queries['per_page']),
+				"query" => $query
 			];
 		} catch (\Throwable $th) {
 			return "ERR:{$th->getMessage()}";
@@ -584,25 +656,64 @@ class BHW_ViewModel extends BHW_Hub
 		}
 	}
 
-	public function mutate_output(&$row) {
+	public function mutate_output(&$row, $index = 0) {
 		foreach ($row as $key => $value) {
-			if ($value === "t") {
-				$row[$key] = true;
-				continue;
-			}
-			if ($value === "f") {
-				$row[$key] = false;
-				continue;
-			}
+			$this->mutate_output_each_field($row, $key, $value, $index);
 		}
+	}
+
+	public function mutate_output_each_field(&$row, $field, $value, $index) {
+		$this->_check_if_mutated_field_is_bool($row, $field, $value, $index);
+	}
+
+	private function _check_if_mutated_field_is_bool(&$row, $field, $value, $index) {
+		if ($value === "t") {
+			$row[$field] = true;
+			return true;
+		}
+		if ($value === "f") {
+			$row[$field] = false;
+			return true;
+		}
+	}
+
+	private function _check_and_redo_query_if_false($query) {
+		if (!is_bool($query))
+			return;
+
+		throw new \Exception("Terdapat masalah pada query \"read_\" yang dijalankan");	
 	}
 
 	protected function _fetch($query)
 	{
 		$data = [];
+		$index = 0;
+		$this->_check_and_redo_query_if_false($query);
 		while ($row = $query->unbuffered_row('array')) {
-			$this->mutate_output($row);
+			$this->mutate_output($row, $index);
 			$data[] = $row;
+			$index++;
+		}
+		return $data;
+	}
+	
+	protected function _fetch_paginated($query, $page, $per_page)
+	{
+		$row_start = ($page - 1) * $per_page;
+		$row_end = $row_start + $per_page;
+		$data = [];
+		$index = 0;
+		$page_index = 0;
+		$this->_check_and_redo_query_if_false($query);
+		while ($row = $query->unbuffered_row('array')) {
+			if ($index >= $row_start && $index < $row_end) {
+				$this->mutate_output($row, $page_index);
+				$data[] = $row;
+				$page_index++;
+			}
+			if ($index >= $row_end)
+				break;
+			$index++;
 		}
 		return $data;
 	}
