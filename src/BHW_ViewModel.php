@@ -102,10 +102,12 @@ class BHW_ViewModel extends BHW_Hub
 	}
 
 	public function db_get_w_count($conditions) {
+		$in = null;
 		if ($this->materialized_view && is_string($this->materialized_view)) {
 			$this->db_conditioning($conditions);
 			$db_get = @$this->db->get($this->materialized_view);
 			if ($db_get) {
+				$in = 1;
 				$db_count = $db_get->num_rows();
 			}
 		}
