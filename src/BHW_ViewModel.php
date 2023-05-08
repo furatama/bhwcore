@@ -19,7 +19,7 @@ class BHW_ViewModel extends BHW_Hub
 	public $order_dir = 'DESC';
 	public $order_by;
 	public $use_cache = false;
-	public $materialized_view_refresh_duration = 60;
+	public $materialized_view_refresh_duration = 20;
 
 	public function __construct()
 	{
@@ -121,6 +121,9 @@ class BHW_ViewModel extends BHW_Hub
 			$this->db_conditioning($conditions);
 			$db_get = $this->db->get($this->table);
 			$this->get_db_error();
+		}
+		if ($this->materialized_view && is_string($this->materialized_view)) {
+			$this->add_to_refresh_materialized_view_queue($this->materialized_view, $this->table, $in);
 		}
 		return [
 			'count' => $db_count,

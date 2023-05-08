@@ -15,7 +15,7 @@ $result = pg_query("CREATE table if not exists utility.materialized_view_refresh
 	mv_name varchar NULL,
 	mv_query text NULL,
 	created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
-	refreshes_in int4 NULL DEFAULT 60,
+	refreshes_in int4 NULL DEFAULT 20,
 	finished_at timestamptz NULL
 );
 CREATE INDEX if not exists materialized_view_refresh_queue_created_at_idx ON utility.materialized_view_refresh_queue USING btree (created_at DESC);
@@ -27,13 +27,13 @@ if ($result) {
 }
 
 while (true) {
-	refresh($dbconn);
+	refresh($dbconn, $REFRESH_BY_SWAPPING);
 	sleep(1);
 }
 
 pg_close($dbconn);
 
-function refresh($dbconn) {
+function refresh($dbconn, $REFRESH_BY_SWAPPING = false) {
 	date_default_timezone_set('Asia/Singapore');
 	$tbname = "utility.materialized_view_refresh_queue";
 
@@ -82,6 +82,11 @@ finished_at IS NULL AND mv_name='". $row['mv_name'] ."'");
 function refresh_by_swapping($dbconn, $row) {
 	$mv_old = $row['mv_name'];
 	$mv_new = $mv_old . "_new";
+	$pos = strpos($mv_old, ".");
+	if ($pos !== false) {
+           $rename = substr($mv_old, $pos + 1);
+    	}
+	$mv_rename = isset($rename) ? $rename : $mv_old;
 	$query = $row['mv_query'];
 	$result = pg_query($dbconn, "CREATE MATERIALIZED VIEW ". $mv_new ." AS " . $query);
 	if (!$result) {
@@ -97,11 +102,9 @@ function refresh_by_swapping($dbconn, $row) {
 		echo "REFRESH -- DROP OLD FAILED" . $mv_new;
 		echo PHP_EOL;
 		echo var_dump($result);
-		echo PHP_EOL;
-		echo PHP_EOL;
-		return false;
+		//return false;
 	}
-	$result = pg_query($dbconn, "ALTER MATERIALIZED VIEW ". $mv_new ." RENAME TO " . $mv_old);
+	$result = pg_query($dbconn, "ALTER MATERIALIZED VIEW ". $mv_new ." RENAME TO " . $mv_rename);
 	if (!$result) {
 		echo "REFRESH -- ALTER NEW TO OLD FAILED" . $mv_new;
 		echo PHP_EOL;
@@ -110,6 +113,8 @@ function refresh_by_swapping($dbconn, $row) {
 		echo PHP_EOL;
 		return false;
 	}
+	echo "REFRESH BY SWAPPING";
+	echo PHP_EOL;
 }
 
 function refresh_by_refreshing($dbconn, $row) {
@@ -125,6 +130,8 @@ AS " . $row['mv_query']);
 		echo PHP_EOL;
 		return false;
 	}
+	echo "REFRESH BY REFRESHING";
+	echo PHP_EOL;
 }
 
 ?>

@@ -4,6 +4,5 @@
 killall php
 pkill php
 
-nohup php "example.php" >> "example.log" &
-
-# nohup php livemgp.php
+mv EXAMPLE.log EXAMPLE_pre_"`date +%Y%m%d%H%M%S`.log"
+nohup php "EXAMPLE.php" >> "EXAMPLE.log" &
