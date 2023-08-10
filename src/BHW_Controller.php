@@ -369,7 +369,7 @@ class BHW_Controller extends RestController
 
 	protected function get_identity()
 	{
-		$auth_token = $this->head('Authorization') ?? $this->head('authorization');
+		$auth_token = $this->head('Authorization') ?? $this->head('authorization') ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
 		if ($auth_token == null || str_contains($auth_token, 'Bearer') === FALSE) {
 			return $this->response([
 				'status' => false,
