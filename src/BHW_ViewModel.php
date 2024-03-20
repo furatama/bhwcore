@@ -520,7 +520,7 @@ class BHW_ViewModel extends BHW_Hub
 		}
 		
 		$converted_count = 0;
-		foreach ($queries as $field => $value) {			
+		foreach ($queries as $field => $value) {
 			$fexp = explode(" ", $field);
 			if (count($fexp) <= 2) {
 				if (preg_match("/[^\w]/", $fexp[0]) === 0) {
@@ -542,59 +542,71 @@ class BHW_ViewModel extends BHW_Hub
 
 			$hasor = isset($pref) && $pref === "||";
 
-			if (is_array($value)) {
-				if (!empty($value))
-					if ($param == "<>" || $param =="!=")
-						if ($hasor)
-							$this->db->or_where_not_in($fd, $value);
-						else
-							$this->db->where_not_in($fd, $value);
-					else
-						if ($hasor)
-							$this->db->or_where_in($fd, $value);
-						else
-							$this->db->where_in($fd, $value);
-			} else if (is_array(json_decode($value))) {
-				if ($param == "<>" || $param =="!=")
-					if ($hasor)
-						$this->db->or_where_not_in($fd, json_decode($value));
-					else
-						$this->db->where_not_in($fd, json_decode($value));
-				else
-					if ($hasor)
-						$this->db->or_where_in($fd, json_decode($value));
-					else
-						$this->db->where_in($fd, json_decode($value));
-			} else {
+			$fn_where_each = function ($value) use ($field, $fd, $param, $hasor) {
 				switch ($param) {
 					case '~':
 					case '~~':
 						$hasor ? $this->db->or_like($fd, $value) : $this->db->like($fd, $value);
-						break;					
+						break;
 					case '!~':
 					case '!~~':
 						$hasor ? $this->db->or_not_like($fd, $value) : $this->db->not_like($fd, $value);
-						break;					
+						break;
 					case '%~':
 						$hasor ? $this->db->or_like($fd, $value, 'before') : $this->db->like($fd, $value, 'before');
-						break;					
+						break;
 					case '!%~':
 						$hasor ? $this->db->or_not_like($fd, $value, 'before') : $this->db->not_like($fd, $value, 'before');
-						break;					
+						break;
 					case '~%':
 						$hasor ? $this->db->or_like($fd, $value, 'after') : $this->db->like($fd, $value, 'after');
-						break;					
+						break;
 					case '!~%':
 						$hasor ? $this->db->or_not_like($fd, $value, 'after') : $this->db->not_like($fd, $value, 'after');
-						break;					
+						break;
 					default:
 						$hasor ? $this->db->or_where($field, $value) : $this->db->where($field, $value);
 						break;
 				}
+			};
+
+			$fn_where = function ($value) use ($fd, $param, $hasor, $fn_where_each) {
+				switch ($param) {
+					case '<>':
+					case '!=':
+						if (is_array($value))
+							$hasor ? $this->db->or_where_not_in($fd, $value) : $this->db->where_not_in($fd, $value);
+						else
+							$hasor ? $this->db->or_where($fd . " != ", $value) : $this->db->where($fd . " != ", $value);
+						break;
+					case '=':
+					case '==':
+						if (is_array($value))
+							$hasor ? $this->db->or_where_in($fd, $value) : $this->db->where_in($fd, $value);
+						else
+							$hasor ? $this->db->or_where($fd, $value) : $this->db->where($fd, $value);
+						break;
+					default:
+						if (is_array($value))
+							foreach ($value as $v)
+								$fn_where_each($v);
+						else
+							$fn_where_each($value);
+						break;
+				}
+			};
+
+			if (is_array($value)) {
+				$fn_where($value);
+			} else if (is_array(json_decode($value))) {
+				$fn_where(json_decode($value));
+			} else {
+				$fn_where($value);
 			}
 			$converted_count++;
 		}
 		return $converted_count;
+
 	}
 
 	//Mengconvert query string menjadi klausa where pada sistem page
