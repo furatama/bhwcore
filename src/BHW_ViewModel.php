@@ -581,6 +581,7 @@ class BHW_ViewModel extends BHW_Hub
 						break;
 					case '=':
 					case '==':
+					case '':
 						if (is_array($value))
 							$hasor ? $this->db->or_where_in($fd, $value) : $this->db->where_in($fd, $value);
 						else
