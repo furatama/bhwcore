@@ -510,6 +510,15 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where
 	public function convert_queries_into_where($queries)
 	{
+		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
+			$search_q = $queries['q'];
+			$this->db->group_start();
+			foreach ($this->searchable_fields as $field) {
+				$this->db->or_where("$field::varchar ILIKE '%$search_q%'");
+			}
+			$this->db->group_end();
+		}
+		
 		$converted_count = 0;
 		foreach ($queries as $field => $value) {			
 			$fexp = explode(" ", $field);
@@ -591,14 +600,6 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page
 	public function convert_queries_into_where_page(&$queries)
 	{
-		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
-			$search_q = $queries['q'];
-			$this->db->group_start();
-			foreach ($this->searchable_fields as $field) {
-				$this->db->or_where("$field::varchar ILIKE '%$search_q%'");
-			}
-			$this->db->group_end();
-		}
 		$page = isset($queries['page']) ? $queries['page'] : 1;
 		$per_page = isset($queries['per_page']) ? $queries['per_page'] : 10;
 		$queries['page'] = $page;
@@ -610,14 +611,6 @@ class BHW_ViewModel extends BHW_Hub
 	//Mengconvert query string menjadi klausa where pada sistem page (untuk counting)
 	public function convert_queries_into_where_page_count(&$queries)
 	{
-		if (isset($queries['q']) && !empty($queries['q']) && !empty($this->searchable_fields)) {
-			$search_q = $queries['q'];
-			$this->db->group_start();
-			foreach ($this->searchable_fields as $field) {
-				$this->db->or_where("$field::varchar ILIKE '%$search_q%'");
-			}
-			$this->db->group_end();
-		}
 		$this->convert_queries_into_where($queries);
 	}
 
